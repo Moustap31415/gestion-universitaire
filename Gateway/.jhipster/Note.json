@@ -1,0 +1,35 @@
+{
+  "annotations": {
+    "changelogDate": "20250512155431"
+  },
+  "applications": ["Gateway", "noteService"],
+  "clientRootFolder": "noteService",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "valeur",
+      "fieldType": "Float",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "commentaires",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "etudiantId",
+      "fieldType": "Long",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "evaluationId",
+      "fieldType": "Long",
+      "fieldValidateRules": ["required"]
+    }
+  ],
+  "microserviceName": "noteService",
+  "name": "Note",
+  "relationships": [],
+  "searchEngine": "elasticsearch",
+  "service": "serviceImpl"
+}

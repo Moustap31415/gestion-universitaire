@@ -1,0 +1,23 @@
+{
+  "generator-jhipster": {
+    "applicationIndex": 4,
+    "applicationType": "microservice",
+    "authenticationType": "oauth2",
+    "baseName": "curriculumService",
+    "buildTool": "maven",
+    "entities": ["Filiere", "Semestre", "UniteEnseignement", "Matiere", "Curriculum"],
+    "jhipsterVersion": "8.11.0",
+    "jwtSecretKey": "YzgwNTNhNTZjYzhjNGNkZDExNWQwNWYwMDBkMWUxOTE1YmM1Yjg5MWI2MWE1ZGNlMzlmZWQyYmIyODVhNGEyOWVjMmI3YWU1NzhkY2EwMjdhNTA2NmQ2Yzk5Yzk4MGRlMzI4Mjg5M2IzZGE3MzA0MzEzZDFmNjVjZjg0OTlmMGU=",
+    "languages": ["en"],
+    "lastLiquibaseTimestamp": 1747064671000,
+    "monorepository": true,
+    "nativeLanguage": "en",
+    "packageName": "sn.edu.ugb.curriculum",
+    "prodDatabaseType": "postgresql",
+    "serverPort": "8084",
+    "serviceDiscoveryType": "eureka",
+    "skipClient": true,
+    "skipCommitHook": true,
+    "skipUserManagement": true
+  }
+}

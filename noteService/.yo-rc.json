@@ -1,0 +1,23 @@
+{
+  "generator-jhipster": {
+    "applicationIndex": 5,
+    "applicationType": "microservice",
+    "authenticationType": "oauth2",
+    "baseName": "noteService",
+    "buildTool": "maven",
+    "entities": ["SessionExamen", "Evaluation", "Note"],
+    "jhipsterVersion": "8.11.0",
+    "jwtSecretKey": "OTViODMwZjZlNWJhYTJkM2U2Y2ZmODY5NzBhYWZlMmYyZGE0NThmMWNmYjI1ZWIwNmZhZWZiY2MyODcxOWI3YTg2ZTI2MDRlYTQxMDVjODNhNTUzZmM1YjU0MWJjMmFkY2Y3YTRhZTM0MWFjZjBhNDE0ZWY0ZmNjODMzNDFlN2I=",
+    "languages": ["en"],
+    "lastLiquibaseTimestamp": 1747064551000,
+    "monorepository": true,
+    "nativeLanguage": "en",
+    "packageName": "sn.edu.ugb.grade",
+    "prodDatabaseType": "postgresql",
+    "serverPort": "8085",
+    "serviceDiscoveryType": "eureka",
+    "skipClient": true,
+    "skipCommitHook": true,
+    "skipUserManagement": true
+  }
+}

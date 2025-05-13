@@ -1,0 +1,20 @@
+{
+  "generator-jhipster": {
+    "deploymentType": "docker-compose",
+    "appsFolders": [
+      "gateway",
+      "userService",
+      "studentService",
+      "teacherService",
+      "curriculumService",
+      "noteService",
+      "reportingService"
+    ],
+    "directoryPath": "../",
+    "gatewayType": "SpringCloudGateway",
+    "monitoring": "no",
+    "clusteredDbApps": [],
+    "serviceDiscoveryType": "eureka",
+    "dockerRepositoryName": "ugb"
+  }
+}

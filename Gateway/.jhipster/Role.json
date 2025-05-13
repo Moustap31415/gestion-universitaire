@@ -1,0 +1,26 @@
+{
+  "annotations": {
+    "changelogDate": "20250512154131"
+  },
+  "applications": ["Gateway", "userService"],
+  "clientRootFolder": "userService",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "nom",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "description",
+      "fieldType": "String"
+    }
+  ],
+  "microserviceName": "userService",
+  "name": "Role",
+  "pagination": "pagination",
+  "relationships": [],
+  "searchEngine": "elasticsearch",
+  "service": "serviceImpl"
+}

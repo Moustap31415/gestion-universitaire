@@ -1,0 +1,266 @@
+// Configuration globale
+application {
+  config {
+    baseName Gateway
+    applicationType gateway
+    packageName sn.edu.ugb
+    authenticationType oauth2
+    serviceDiscoveryType eureka
+    skipClient true
+    prodDatabaseType postgresql
+    buildTool maven
+    clientPackageManager npm
+  }
+  entities *
+}
+
+// Microservice Utilisateur
+application {
+  config {
+    baseName userService
+    applicationType microservice
+    packageName sn.edu.ugb.user
+    authenticationType oauth2
+    serviceDiscoveryType eureka
+    skipClient true
+    prodDatabaseType postgresql
+    buildTool maven
+    serverPort 8081
+  }
+  entities Role, ProfilUtilisateur
+}
+
+// Microservice Étudiant
+application {
+  config {
+    baseName studentService
+    applicationType microservice
+    packageName sn.edu.ugb.student
+    authenticationType oauth2
+    serviceDiscoveryType eureka
+    skipClient true
+    prodDatabaseType postgresql
+    buildTool maven
+    serverPort 8082
+  }
+  entities Etudiant, HistoriqueAcademique, Inscription
+}
+
+// Microservice Enseignant
+application {
+  config {
+    baseName teacherService
+    applicationType microservice
+    packageName sn.edu.ugb.teacher
+    authenticationType oauth2
+    serviceDiscoveryType eureka
+    skipClient true
+    prodDatabaseType postgresql
+    buildTool maven
+    serverPort 8083
+  }
+  entities Enseignant, AffectationEnseignement
+}
+
+// Microservice Cursus
+application {
+  config {
+    baseName curriculumService
+    applicationType microservice
+    packageName sn.edu.ugb.curriculum
+    authenticationType oauth2
+    serviceDiscoveryType eureka
+    skipClient true
+    prodDatabaseType postgresql
+    buildTool maven
+    serverPort 8084
+  }
+  entities Filiere, Semestre, UniteEnseignement, Matiere, Curriculum
+}
+
+// Microservice Notes
+application {
+  config {
+    baseName noteService
+    applicationType microservice
+    packageName sn.edu.ugb.grade
+    authenticationType oauth2
+    serviceDiscoveryType eureka
+    skipClient true
+    prodDatabaseType postgresql
+    buildTool maven
+    serverPort 8085
+  }
+  entities SessionExamen, Evaluation, Note
+}
+
+// Microservice Reporting
+application {
+  config {
+    baseName reportingService
+    applicationType microservice
+    packageName sn.edu.ugb.reporting
+    authenticationType oauth2
+    serviceDiscoveryType eureka
+    skipClient true
+    prodDatabaseType postgresql
+    buildTool maven
+    serverPort 8086
+  }
+  entities ModeleRapport, DonneeStatistique, DonneeModele
+}
+
+// Entités du service Utilisateur
+entity ProfilUtilisateur {
+    nom String required
+    prenom String required
+    email String required unique
+    telephone String
+    roleId Long required // Référence à Role
+}
+
+entity Role {
+    nom String required
+    description String
+}
+
+// Entités du service Étudiant
+entity Etudiant {
+    numeroEtudiant String required unique
+    dateNaissance LocalDate
+    adresse String
+    formationActuelle String
+    utilisateurId Long required // Référence externe à ProfilUtilisateur
+}
+
+entity HistoriqueAcademique {
+    statut StatutAcademique required
+    dateInscription Instant required
+    etudiantId Long required // Référence à Etudiant
+    semestreId Long required // Référence externe à Semestre
+}
+
+entity Inscription {
+    enCours Boolean required
+    etudiantId Long required // Référence à Etudiant
+    filiereId Long required  // Référence externe à Filiere
+    semestreId Long required // Référence externe à Semestre
+}
+
+// Entités du service Enseignant
+entity Enseignant {
+    numeroEnseignant String required unique
+    specialisation String
+    dateEmbauche LocalDate
+    utilisateurId Long required // Référence externe à ProfilUtilisateur
+}
+
+entity AffectationEnseignement {
+    anneeAcademique String required
+    enseignantId Long required // Référence à Enseignant
+    coursId Long required     // Référence externe à Matiere
+}
+
+// Entités du service Cursus
+entity Filiere {
+    nom String required
+    code String required unique
+}
+
+entity Semestre {
+    nom NomSemestre required
+    dateDebut LocalDate required
+    dateFin LocalDate required
+}
+
+entity UniteEnseignement {
+    nom String required
+    code String required unique
+    filiereId Long required // Référence à Filiere
+}
+
+entity Matiere {
+    nom String required
+    heures Integer required
+    credits Integer required
+    moduleId Long required // Référence à UniteEnseignement
+}
+
+entity Curriculum {
+    filiereId Long required    // Référence à Filiere
+    moduleId Long required     // Référence à UniteEnseignement
+    semestreId Long required   // Référence à Semestre
+}
+
+// Entités du service Notes
+entity SessionExamen {
+    nom String required
+    dateDebut LocalDate required
+    dateFin LocalDate required
+}
+
+entity Evaluation {
+    type TypeEvaluation required
+    noteMaximale Float required
+    date LocalDate required
+    coursId Long required     // Référence externe à Matiere
+    sessionId Long required   // Référence à SessionExamen
+}
+
+entity Note {
+    valeur Float required
+    commentaires String
+    etudiantId Long required    // Référence externe à Etudiant
+    evaluationId Long required  // Référence à Evaluation
+}
+
+// Entités du service Reporting
+entity ModeleRapport {
+    nom String required
+    requeteSql Text
+    roleAcces RoleAcces required
+}
+
+entity DonneeStatistique {
+    nom String required
+    valeur Float required
+    semestreId Long required  // Référence externe à Semestre
+    filiereId Long required   // Référence externe à Filiere
+}
+
+entity DonneeModele {
+    donneeId Long required  // Référence à DonneeStatistique
+    modeleId Long required  // Référence à ModeleRapport
+}
+
+// Enums
+enum StatutAcademique {
+    EN_COURS, VALIDE, ABANDON
+}
+
+enum TypeEvaluation {
+    DS, EXAMEN, DM, PROJET
+}
+
+enum NomSemestre {
+    Semestre1, Semestre2
+}
+
+enum RoleAcces {
+    ADMIN, ENSEIGNANT
+}
+
+// Options
+service all with serviceImpl
+paginate all with pagination except Note, DonneeModele
+dto all with mapstruct
+microservice all with serviceImpl
+search all with elasticsearch
+
+// Configuration Docker
+deployment {
+  deploymentType docker-compose
+  appsFolders [gateway, userService, studentService, teacherService, curriculumService, noteService, reportingService]
+  dockerRepositoryName "ugb"
+  serviceDiscoveryType eureka
+}

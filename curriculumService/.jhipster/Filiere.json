@@ -1,0 +1,27 @@
+{
+  "annotations": {
+    "changelogDate": "20250512154031"
+  },
+  "applications": ["Gateway", "curriculumService"],
+  "clientRootFolder": "curriculumService",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "nom",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "code",
+      "fieldType": "String",
+      "fieldValidateRules": ["required", "unique"]
+    }
+  ],
+  "microserviceName": "curriculumService",
+  "name": "Filiere",
+  "pagination": "pagination",
+  "relationships": [],
+  "searchEngine": "no",
+  "service": "serviceImpl"
+}

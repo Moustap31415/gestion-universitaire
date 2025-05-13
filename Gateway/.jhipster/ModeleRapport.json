@@ -1,0 +1,32 @@
+{
+  "annotations": {
+    "changelogDate": "20250512155531"
+  },
+  "applications": ["Gateway", "reportingService"],
+  "clientRootFolder": "reportingService",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "nom",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "requeteSql",
+      "fieldType": "Text"
+    },
+    {
+      "fieldName": "roleAcces",
+      "fieldType": "RoleAcces",
+      "fieldValidateRules": ["required"],
+      "fieldValues": "ADMIN,ENSEIGNANT"
+    }
+  ],
+  "microserviceName": "reportingService",
+  "name": "ModeleRapport",
+  "pagination": "pagination",
+  "relationships": [],
+  "searchEngine": "elasticsearch",
+  "service": "serviceImpl"
+}
