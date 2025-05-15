@@ -3,6 +3,8 @@ package sn.edu.ugb.user.domain;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
@@ -29,6 +31,10 @@ public class Role implements Serializable {
 
     @Column(name = "description")
     private String description;
+
+    @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    private Set<ProfilUtilisateur> profilUtilisateurs = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -69,6 +75,37 @@ public class Role implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Set<ProfilUtilisateur> getProfilUtilisateurs() {
+        return this.profilUtilisateurs;
+    }
+
+    public void setProfilUtilisateurs(Set<ProfilUtilisateur> profilUtilisateurs) {
+        if (this.profilUtilisateurs != null) {
+            this.profilUtilisateurs.forEach(i -> i.setRole(null));
+        }
+        if (profilUtilisateurs != null) {
+            profilUtilisateurs.forEach(i -> i.setRole(this));
+        }
+        this.profilUtilisateurs = profilUtilisateurs;
+    }
+
+    public Role profilUtilisateurs(Set<ProfilUtilisateur> profilUtilisateurs) {
+        this.setProfilUtilisateurs(profilUtilisateurs);
+        return this;
+    }
+
+    public Role addProfilUtilisateur(ProfilUtilisateur profilUtilisateur) {
+        this.profilUtilisateurs.add(profilUtilisateur);
+        profilUtilisateur.setRole(this);
+        return this;
+    }
+
+    public Role removeProfilUtilisateur(ProfilUtilisateur profilUtilisateur) {
+        this.profilUtilisateurs.remove(profilUtilisateur);
+        profilUtilisateur.setRole(null);
+        return this;
     }
 
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
