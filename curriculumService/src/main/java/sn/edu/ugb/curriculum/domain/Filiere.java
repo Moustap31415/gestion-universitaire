@@ -3,12 +3,11 @@ package sn.edu.ugb.curriculum.domain;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-/**
- * A Filiere.
- */
 @Entity
 @Table(name = "filiere")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
@@ -30,6 +29,14 @@ public class Filiere implements Serializable {
     @NotNull
     @Column(name = "code", nullable = false, unique = true)
     private String code;
+
+    @OneToMany(mappedBy = "filiere", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    private Set<UniteEnseignement> unitesEnseignement = new HashSet<>();
+
+    @OneToMany(mappedBy = "filiere", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    private Set<Curriculum> curricula = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -72,7 +79,67 @@ public class Filiere implements Serializable {
         this.code = code;
     }
 
-    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
+    public Set<UniteEnseignement> getUnitesEnseignement() {
+        return this.unitesEnseignement;
+    }
+
+    public void setUnitesEnseignement(Set<UniteEnseignement> unitesEnseignement) {
+        if (this.unitesEnseignement != null) {
+            this.unitesEnseignement.forEach(i -> i.setFiliere(null));
+        }
+        if (unitesEnseignement != null) {
+            unitesEnseignement.forEach(i -> i.setFiliere(this));
+        }
+        this.unitesEnseignement = unitesEnseignement;
+    }
+
+    public Filiere unitesEnseignement(Set<UniteEnseignement> unitesEnseignement) {
+        this.setUnitesEnseignement(unitesEnseignement);
+        return this;
+    }
+
+    public Filiere addUniteEnseignement(UniteEnseignement uniteEnseignement) {
+        this.unitesEnseignement.add(uniteEnseignement);
+        uniteEnseignement.setFiliere(this);
+        return this;
+    }
+
+    public Filiere removeUniteEnseignement(UniteEnseignement uniteEnseignement) {
+        this.unitesEnseignement.remove(uniteEnseignement);
+        uniteEnseignement.setFiliere(null);
+        return this;
+    }
+
+    public Set<Curriculum> getCurricula() {
+        return this.curricula;
+    }
+
+    public void setCurricula(Set<Curriculum> curricula) {
+        if (this.curricula != null) {
+            this.curricula.forEach(i -> i.setFiliere(null));
+        }
+        if (curricula != null) {
+            curricula.forEach(i -> i.setFiliere(this));
+        }
+        this.curricula = curricula;
+    }
+
+    public Filiere curricula(Set<Curriculum> curricula) {
+        this.setCurricula(curricula);
+        return this;
+    }
+
+    public Filiere addCurriculum(Curriculum curriculum) {
+        this.curricula.add(curriculum);
+        curriculum.setFiliere(this);
+        return this;
+    }
+
+    public Filiere removeCurriculum(Curriculum curriculum) {
+        this.curricula.remove(curriculum);
+        curriculum.setFiliere(null);
+        return this;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -87,11 +154,9 @@ public class Filiere implements Serializable {
 
     @Override
     public int hashCode() {
-        // see https://vladmihalcea.com/how-to-implement-equals-and-hashcode-using-the-jpa-entity-identifier/
         return getClass().hashCode();
     }
 
-    // prettier-ignore
     @Override
     public String toString() {
         return "Filiere{" +

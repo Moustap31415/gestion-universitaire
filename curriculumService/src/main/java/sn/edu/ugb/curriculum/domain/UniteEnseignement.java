@@ -3,12 +3,11 @@ package sn.edu.ugb.curriculum.domain;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-/**
- * A UniteEnseignement.
- */
 @Entity
 @Table(name = "unite_enseignement")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
@@ -31,9 +30,17 @@ public class UniteEnseignement implements Serializable {
     @Column(name = "code", nullable = false, unique = true)
     private String code;
 
-    @NotNull
-    @Column(name = "filiere_id", nullable = false)
-    private Long filiereId;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "filiere_id", nullable = false)
+    private Filiere filiere;
+
+    @OneToMany(mappedBy = "uniteEnseignement", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    private Set<Matiere> matieres = new HashSet<>();
+
+    @OneToMany(mappedBy = "uniteEnseignement", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    private Set<Curriculum> curricula = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -76,20 +83,80 @@ public class UniteEnseignement implements Serializable {
         this.code = code;
     }
 
-    public Long getFiliereId() {
-        return this.filiereId;
+    public Filiere getFiliere() {
+        return this.filiere;
     }
 
-    public UniteEnseignement filiereId(Long filiereId) {
-        this.setFiliereId(filiereId);
+    public void setFiliere(Filiere filiere) {
+        this.filiere = filiere;
+    }
+
+    public UniteEnseignement filiere(Filiere filiere) {
+        this.setFiliere(filiere);
         return this;
     }
 
-    public void setFiliereId(Long filiereId) {
-        this.filiereId = filiereId;
+    public Set<Matiere> getMatieres() {
+        return this.matieres;
     }
 
-    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
+    public void setMatieres(Set<Matiere> matieres) {
+        if (this.matieres != null) {
+            this.matieres.forEach(i -> i.setUniteEnseignement(null));
+        }
+        if (matieres != null) {
+            matieres.forEach(i -> i.setUniteEnseignement(this));
+        }
+        this.matieres = matieres;
+    }
+
+    public UniteEnseignement matieres(Set<Matiere> matieres) {
+        this.setMatieres(matieres);
+        return this;
+    }
+
+    public UniteEnseignement addMatiere(Matiere matiere) {
+        this.matieres.add(matiere);
+        matiere.setUniteEnseignement(this);
+        return this;
+    }
+
+    public UniteEnseignement removeMatiere(Matiere matiere) {
+        this.matieres.remove(matiere);
+        matiere.setUniteEnseignement(null);
+        return this;
+    }
+
+    public Set<Curriculum> getCurricula() {
+        return this.curricula;
+    }
+
+    public void setCurricula(Set<Curriculum> curricula) {
+        if (this.curricula != null) {
+            this.curricula.forEach(i -> i.setUniteEnseignement(null));
+        }
+        if (curricula != null) {
+            curricula.forEach(i -> i.setUniteEnseignement(this));
+        }
+        this.curricula = curricula;
+    }
+
+    public UniteEnseignement curricula(Set<Curriculum> curricula) {
+        this.setCurricula(curricula);
+        return this;
+    }
+
+    public UniteEnseignement addCurriculum(Curriculum curriculum) {
+        this.curricula.add(curriculum);
+        curriculum.setUniteEnseignement(this);
+        return this;
+    }
+
+    public UniteEnseignement removeCurriculum(Curriculum curriculum) {
+        this.curricula.remove(curriculum);
+        curriculum.setUniteEnseignement(null);
+        return this;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -104,18 +171,15 @@ public class UniteEnseignement implements Serializable {
 
     @Override
     public int hashCode() {
-        // see https://vladmihalcea.com/how-to-implement-equals-and-hashcode-using-the-jpa-entity-identifier/
         return getClass().hashCode();
     }
 
-    // prettier-ignore
     @Override
     public String toString() {
         return "UniteEnseignement{" +
             "id=" + getId() +
             ", nom='" + getNom() + "'" +
             ", code='" + getCode() + "'" +
-            ", filiereId=" + getFiliereId() +
             "}";
     }
 }

@@ -6,9 +6,6 @@ import java.io.Serializable;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-/**
- * A Matiere.
- */
 @Entity
 @Table(name = "matiere")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
@@ -35,9 +32,9 @@ public class Matiere implements Serializable {
     @Column(name = "credits", nullable = false)
     private Integer credits;
 
-    @NotNull
-    @Column(name = "module_id", nullable = false)
-    private Long moduleId;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "unite_enseignement_id", nullable = false)
+    private UniteEnseignement uniteEnseignement;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -93,20 +90,18 @@ public class Matiere implements Serializable {
         this.credits = credits;
     }
 
-    public Long getModuleId() {
-        return this.moduleId;
+    public UniteEnseignement getUniteEnseignement() {
+        return this.uniteEnseignement;
     }
 
-    public Matiere moduleId(Long moduleId) {
-        this.setModuleId(moduleId);
+    public void setUniteEnseignement(UniteEnseignement uniteEnseignement) {
+        this.uniteEnseignement = uniteEnseignement;
+    }
+
+    public Matiere uniteEnseignement(UniteEnseignement uniteEnseignement) {
+        this.setUniteEnseignement(uniteEnseignement);
         return this;
     }
-
-    public void setModuleId(Long moduleId) {
-        this.moduleId = moduleId;
-    }
-
-    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @Override
     public boolean equals(Object o) {
@@ -121,11 +116,9 @@ public class Matiere implements Serializable {
 
     @Override
     public int hashCode() {
-        // see https://vladmihalcea.com/how-to-implement-equals-and-hashcode-using-the-jpa-entity-identifier/
         return getClass().hashCode();
     }
 
-    // prettier-ignore
     @Override
     public String toString() {
         return "Matiere{" +
@@ -133,7 +126,6 @@ public class Matiere implements Serializable {
             ", nom='" + getNom() + "'" +
             ", heures=" + getHeures() +
             ", credits=" + getCredits() +
-            ", moduleId=" + getModuleId() +
             "}";
     }
 }

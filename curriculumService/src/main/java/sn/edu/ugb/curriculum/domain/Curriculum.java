@@ -6,9 +6,6 @@ import java.io.Serializable;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-/**
- * A Curriculum.
- */
 @Entity
 @Table(name = "curriculum")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
@@ -23,17 +20,17 @@ public class Curriculum implements Serializable {
     @Column(name = "id")
     private Long id;
 
-    @NotNull
-    @Column(name = "filiere_id", nullable = false)
-    private Long filiereId;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "filiere_id", nullable = false)
+    private Filiere filiere;
 
-    @NotNull
-    @Column(name = "module_id", nullable = false)
-    private Long moduleId;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "unite_enseignement_id", nullable = false)
+    private UniteEnseignement uniteEnseignement;
 
-    @NotNull
-    @Column(name = "semestre_id", nullable = false)
-    private Long semestreId;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "semestre_id", nullable = false)
+    private Semestre semestre;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -50,46 +47,44 @@ public class Curriculum implements Serializable {
         this.id = id;
     }
 
-    public Long getFiliereId() {
-        return this.filiereId;
+    public Filiere getFiliere() {
+        return this.filiere;
     }
 
-    public Curriculum filiereId(Long filiereId) {
-        this.setFiliereId(filiereId);
+    public void setFiliere(Filiere filiere) {
+        this.filiere = filiere;
+    }
+
+    public Curriculum filiere(Filiere filiere) {
+        this.setFiliere(filiere);
         return this;
     }
 
-    public void setFiliereId(Long filiereId) {
-        this.filiereId = filiereId;
+    public UniteEnseignement getUniteEnseignement() {
+        return this.uniteEnseignement;
     }
 
-    public Long getModuleId() {
-        return this.moduleId;
+    public void setUniteEnseignement(UniteEnseignement uniteEnseignement) {
+        this.uniteEnseignement = uniteEnseignement;
     }
 
-    public Curriculum moduleId(Long moduleId) {
-        this.setModuleId(moduleId);
+    public Curriculum uniteEnseignement(UniteEnseignement uniteEnseignement) {
+        this.setUniteEnseignement(uniteEnseignement);
         return this;
     }
 
-    public void setModuleId(Long moduleId) {
-        this.moduleId = moduleId;
+    public Semestre getSemestre() {
+        return this.semestre;
     }
 
-    public Long getSemestreId() {
-        return this.semestreId;
+    public void setSemestre(Semestre semestre) {
+        this.semestre = semestre;
     }
 
-    public Curriculum semestreId(Long semestreId) {
-        this.setSemestreId(semestreId);
+    public Curriculum semestre(Semestre semestre) {
+        this.setSemestre(semestre);
         return this;
     }
-
-    public void setSemestreId(Long semestreId) {
-        this.semestreId = semestreId;
-    }
-
-    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @Override
     public boolean equals(Object o) {
@@ -104,18 +99,13 @@ public class Curriculum implements Serializable {
 
     @Override
     public int hashCode() {
-        // see https://vladmihalcea.com/how-to-implement-equals-and-hashcode-using-the-jpa-entity-identifier/
         return getClass().hashCode();
     }
 
-    // prettier-ignore
     @Override
     public String toString() {
         return "Curriculum{" +
             "id=" + getId() +
-            ", filiereId=" + getFiliereId() +
-            ", moduleId=" + getModuleId() +
-            ", semestreId=" + getSemestreId() +
             "}";
     }
 }
