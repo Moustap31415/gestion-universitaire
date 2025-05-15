@@ -8,9 +8,6 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import sn.edu.ugb.student.domain.enumeration.StatutAcademique;
 
-/**
- * A HistoriqueAcademique.
- */
 @Entity
 @Table(name = "historique_academique")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
@@ -34,9 +31,9 @@ public class HistoriqueAcademique implements Serializable {
     @Column(name = "date_inscription", nullable = false)
     private Instant dateInscription;
 
-    @NotNull
-    @Column(name = "etudiant_id", nullable = false)
-    private Long etudiantId;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "etudiant_id", nullable = false)
+    private Etudiant etudiant;
 
     @NotNull
     @Column(name = "semestre_id", nullable = false)
@@ -83,17 +80,17 @@ public class HistoriqueAcademique implements Serializable {
         this.dateInscription = dateInscription;
     }
 
-    public Long getEtudiantId() {
-        return this.etudiantId;
+    public Etudiant getEtudiant() {
+        return this.etudiant;
     }
 
-    public HistoriqueAcademique etudiantId(Long etudiantId) {
-        this.setEtudiantId(etudiantId);
+    public HistoriqueAcademique etudiant(Etudiant etudiant) {
+        this.setEtudiant(etudiant);
         return this;
     }
 
-    public void setEtudiantId(Long etudiantId) {
-        this.etudiantId = etudiantId;
+    public void setEtudiant(Etudiant etudiant) {
+        this.etudiant = etudiant;
     }
 
     public Long getSemestreId() {
@@ -128,14 +125,12 @@ public class HistoriqueAcademique implements Serializable {
         return getClass().hashCode();
     }
 
-    // prettier-ignore
     @Override
     public String toString() {
         return "HistoriqueAcademique{" +
             "id=" + getId() +
             ", statut='" + getStatut() + "'" +
             ", dateInscription='" + getDateInscription() + "'" +
-            ", etudiantId=" + getEtudiantId() +
             ", semestreId=" + getSemestreId() +
             "}";
     }

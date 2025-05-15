@@ -6,9 +6,6 @@ import java.io.Serializable;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-/**
- * A Inscription.
- */
 @Entity
 @Table(name = "inscription")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
@@ -27,9 +24,9 @@ public class Inscription implements Serializable {
     @Column(name = "en_cours", nullable = false)
     private Boolean enCours;
 
-    @NotNull
-    @Column(name = "etudiant_id", nullable = false)
-    private Long etudiantId;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "etudiant_id", nullable = false)
+    private Etudiant etudiant;
 
     @NotNull
     @Column(name = "filiere_id", nullable = false)
@@ -67,17 +64,17 @@ public class Inscription implements Serializable {
         this.enCours = enCours;
     }
 
-    public Long getEtudiantId() {
-        return this.etudiantId;
+    public Etudiant getEtudiant() {
+        return this.etudiant;
     }
 
-    public Inscription etudiantId(Long etudiantId) {
-        this.setEtudiantId(etudiantId);
+    public Inscription etudiant(Etudiant etudiant) {
+        this.setEtudiant(etudiant);
         return this;
     }
 
-    public void setEtudiantId(Long etudiantId) {
-        this.etudiantId = etudiantId;
+    public void setEtudiant(Etudiant etudiant) {
+        this.etudiant = etudiant;
     }
 
     public Long getFiliereId() {
@@ -125,13 +122,11 @@ public class Inscription implements Serializable {
         return getClass().hashCode();
     }
 
-    // prettier-ignore
     @Override
     public String toString() {
         return "Inscription{" +
             "id=" + getId() +
             ", enCours='" + getEnCours() + "'" +
-            ", etudiantId=" + getEtudiantId() +
             ", filiereId=" + getFiliereId() +
             ", semestreId=" + getSemestreId() +
             "}";

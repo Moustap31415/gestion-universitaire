@@ -4,15 +4,11 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.time.LocalDate;
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
+import java.util.HashSet;
+import java.util.Set;
 
-/**
- * A Etudiant.
- */
 @Entity
 @Table(name = "etudiant")
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
 public class Etudiant implements Serializable {
 
@@ -21,25 +17,25 @@ public class Etudiant implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
     @SequenceGenerator(name = "sequenceGenerator")
-    @Column(name = "id")
     private Long id;
 
     @NotNull
-    @Column(name = "numero_etudiant", nullable = false, unique = true)
+    @Column(unique = true)
     private String numeroEtudiant;
 
-    @Column(name = "date_naissance")
     private LocalDate dateNaissance;
-
-    @Column(name = "adresse")
     private String adresse;
-
-    @Column(name = "formation_actuelle")
     private String formationActuelle;
 
     @NotNull
-    @Column(name = "utilisateur_id", nullable = false)
+    @Column(name = "utilisateur_id")
     private Long utilisateurId;
+
+    @OneToMany(mappedBy = "etudiant", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<HistoriqueAcademique> historiques = new HashSet<>();
+
+    @OneToMany(mappedBy = "etudiant", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Inscription> inscriptions = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -121,7 +117,67 @@ public class Etudiant implements Serializable {
         this.utilisateurId = utilisateurId;
     }
 
-    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
+    public Set<HistoriqueAcademique> getHistoriques() {
+        return this.historiques;
+    }
+
+    public void setHistoriques(Set<HistoriqueAcademique> historiques) {
+        if (this.historiques != null) {
+            this.historiques.forEach(i -> i.setEtudiant(null));
+        }
+        if (historiques != null) {
+            historiques.forEach(i -> i.setEtudiant(this));
+        }
+        this.historiques = historiques;
+    }
+
+    public Etudiant historiques(Set<HistoriqueAcademique> historiques) {
+        this.setHistoriques(historiques);
+        return this;
+    }
+
+    public Etudiant addHistorique(HistoriqueAcademique historique) {
+        this.historiques.add(historique);
+        historique.setEtudiant(this);
+        return this;
+    }
+
+    public Etudiant removeHistorique(HistoriqueAcademique historique) {
+        this.historiques.remove(historique);
+        historique.setEtudiant(null);
+        return this;
+    }
+
+    public Set<Inscription> getInscriptions() {
+        return this.inscriptions;
+    }
+
+    public void setInscriptions(Set<Inscription> inscriptions) {
+        if (this.inscriptions != null) {
+            this.inscriptions.forEach(i -> i.setEtudiant(null));
+        }
+        if (inscriptions != null) {
+            inscriptions.forEach(i -> i.setEtudiant(this));
+        }
+        this.inscriptions = inscriptions;
+    }
+
+    public Etudiant inscriptions(Set<Inscription> inscriptions) {
+        this.setInscriptions(inscriptions);
+        return this;
+    }
+
+    public Etudiant addInscription(Inscription inscription) {
+        this.inscriptions.add(inscription);
+        inscription.setEtudiant(this);
+        return this;
+    }
+
+    public Etudiant removeInscription(Inscription inscription) {
+        this.inscriptions.remove(inscription);
+        inscription.setEtudiant(null);
+        return this;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -140,7 +196,6 @@ public class Etudiant implements Serializable {
         return getClass().hashCode();
     }
 
-    // prettier-ignore
     @Override
     public String toString() {
         return "Etudiant{" +
