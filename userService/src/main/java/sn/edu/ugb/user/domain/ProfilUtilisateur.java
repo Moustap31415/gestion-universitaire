@@ -38,9 +38,9 @@ public class ProfilUtilisateur implements Serializable {
     @Column(name = "telephone")
     private String telephone;
 
-    @NotNull
-    @Column(name = "role_id", nullable = false)
-    private Long roleId;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
@@ -109,17 +109,17 @@ public class ProfilUtilisateur implements Serializable {
         this.telephone = telephone;
     }
 
-    public Long getRoleId() {
-        return this.roleId;
+    public Role getRole() {
+        return this.role;
     }
 
-    public ProfilUtilisateur roleId(Long roleId) {
-        this.setRoleId(roleId);
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public ProfilUtilisateur role(Role role) {
+        this.setRole(role);
         return this;
-    }
-
-    public void setRoleId(Long roleId) {
-        this.roleId = roleId;
     }
 
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
@@ -150,7 +150,6 @@ public class ProfilUtilisateur implements Serializable {
             ", prenom='" + getPrenom() + "'" +
             ", email='" + getEmail() + "'" +
             ", telephone='" + getTelephone() + "'" +
-            ", roleId=" + getRoleId() +
             "}";
     }
 }
