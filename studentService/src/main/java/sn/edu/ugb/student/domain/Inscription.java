@@ -5,11 +5,16 @@ import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+/**
+ * Entité représentant une inscription d'étudiant
+ */
 @Entity
 @Table(name = "inscription")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
+@Schema(description = "Entité représentant une inscription d'étudiant à une filière et un semestre")
 public class Inscription implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -18,22 +23,27 @@ public class Inscription implements Serializable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
     @SequenceGenerator(name = "sequenceGenerator")
     @Column(name = "id")
+    @Schema(description = "ID unique de l'inscription", example = "1")
     private Long id;
 
     @NotNull
     @Column(name = "en_cours", nullable = false)
+    @Schema(description = "Indique si l'inscription est en cours", requiredMode = Schema.RequiredMode.REQUIRED, example = "true")
     private Boolean enCours;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "etudiant_id", nullable = false)
+    @Schema(description = "Étudiant associé à l'inscription")
     private Etudiant etudiant;
 
     @NotNull
     @Column(name = "filiere_id", nullable = false)
+    @Schema(description = "ID de la filière", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Long filiereId;
 
     @NotNull
     @Column(name = "semestre_id", nullable = false)
+    @Schema(description = "ID du semestre", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Long semestreId;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here

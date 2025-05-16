@@ -23,12 +23,17 @@ import sn.edu.ugb.student.web.rest.errors.BadRequestAlertException;
 import tech.jhipster.web.util.HeaderUtil;
 import tech.jhipster.web.util.PaginationUtil;
 import tech.jhipster.web.util.ResponseUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * REST controller for managing {@link sn.edu.ugb.student.domain.Inscription}.
  */
 @RestController
 @RequestMapping("/api/inscriptions")
+@Tag(name = "Inscription", description = "Gestion des inscriptions des étudiants")
 public class InscriptionResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(InscriptionResource.class);
@@ -55,7 +60,20 @@ public class InscriptionResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("")
-    public ResponseEntity<InscriptionDTO> createInscription(@Valid @RequestBody InscriptionDTO inscriptionDTO) throws URISyntaxException {
+    @Operation(
+        summary = "Créer une nouvelle inscription",
+        description = "Enregistre une nouvelle inscription pour un étudiant",
+        responses = {
+            @ApiResponse(responseCode = "201", description = "Inscription créée"),
+            @ApiResponse(responseCode = "400", description = "Données invalides"),
+            @ApiResponse(responseCode = "401", description = "Non autorisé"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé")
+        }
+    )
+    public ResponseEntity<InscriptionDTO> createInscription(
+        @Parameter(description = "DTO de l'inscription à créer", required = true)
+        @Valid @RequestBody InscriptionDTO inscriptionDTO
+    ) throws URISyntaxException {
         LOG.debug("REST request to save Inscription : {}", inscriptionDTO);
         if (inscriptionDTO.getId() != null) {
             throw new BadRequestAlertException("A new inscription cannot already have an ID", ENTITY_NAME, "idexists");
@@ -77,8 +95,20 @@ public class InscriptionResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/{id}")
+    @Operation(
+        summary = "Mettre à jour une inscription",
+        description = "Met à jour toutes les informations d'une inscription existante",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Inscription mise à jour"),
+            @ApiResponse(responseCode = "400", description = "Données invalides"),
+            @ApiResponse(responseCode = "404", description = "Inscription non trouvée"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     public ResponseEntity<InscriptionDTO> updateInscription(
+        @Parameter(description = "ID de l'inscription à mettre à jour", required = true)
         @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "DTO de l'inscription avec les nouvelles valeurs", required = true)
         @Valid @RequestBody InscriptionDTO inscriptionDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to update Inscription : {}, {}", id, inscriptionDTO);
@@ -111,8 +141,20 @@ public class InscriptionResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
+    @Operation(
+        summary = "Mise à jour partielle d'une inscription",
+        description = "Met à jour seulement les champs spécifiés d'une inscription",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Inscription partiellement mise à jour"),
+            @ApiResponse(responseCode = "400", description = "Données invalides"),
+            @ApiResponse(responseCode = "404", description = "Inscription non trouvée"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     public ResponseEntity<InscriptionDTO> partialUpdateInscription(
+        @Parameter(description = "ID de l'inscription à mettre à jour", required = true)
         @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "DTO partiel de l'inscription avec les champs à mettre à jour", required = true)
         @NotNull @RequestBody InscriptionDTO inscriptionDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to partial update Inscription partially : {}, {}", id, inscriptionDTO);
@@ -142,7 +184,19 @@ public class InscriptionResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of inscriptions in body.
      */
     @GetMapping("")
-    public ResponseEntity<List<InscriptionDTO>> getAllInscriptions(@org.springdoc.core.annotations.ParameterObject Pageable pageable) {
+    @Operation(
+        summary = "Lister toutes les inscriptions",
+        description = "Retourne une liste paginée de toutes les inscriptions",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Liste des inscriptions récupérée"),
+            @ApiResponse(responseCode = "401", description = "Non autorisé"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé")
+        }
+    )
+    public ResponseEntity<List<InscriptionDTO>> getAllInscriptions(
+        @Parameter(description = "Paramètres de pagination (page, size, sort)")
+        @org.springdoc.core.annotations.ParameterObject Pageable pageable
+    ) {
         LOG.debug("REST request to get a page of Inscriptions");
         Page<InscriptionDTO> page = inscriptionService.findAll(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
@@ -156,7 +210,18 @@ public class InscriptionResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the inscriptionDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<InscriptionDTO> getInscription(@PathVariable("id") Long id) {
+    @Operation(
+        summary = "Obtenir une inscription par ID",
+        description = "Retourne les détails d'une inscription spécifique",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Inscription trouvée"),
+            @ApiResponse(responseCode = "404", description = "Inscription non trouvée")
+        }
+    )
+    public ResponseEntity<InscriptionDTO> getInscription(
+        @Parameter(description = "ID de l'inscription à récupérer", required = true)
+        @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to get Inscription : {}", id);
         Optional<InscriptionDTO> inscriptionDTO = inscriptionService.findOne(id);
         return ResponseUtil.wrapOrNotFound(inscriptionDTO);
@@ -169,7 +234,18 @@ public class InscriptionResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteInscription(@PathVariable("id") Long id) {
+    @Operation(
+        summary = "Supprimer une inscription",
+        description = "Supprime définitivement une inscription",
+        responses = {
+            @ApiResponse(responseCode = "204", description = "Inscription supprimée"),
+            @ApiResponse(responseCode = "404", description = "Inscription non trouvée")
+        }
+    )
+    public ResponseEntity<Void> deleteInscription(
+        @Parameter(description = "ID de l'inscription à supprimer", required = true)
+        @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to delete Inscription : {}", id);
         inscriptionService.delete(id);
         return ResponseEntity.noContent()

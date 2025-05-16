@@ -23,12 +23,17 @@ import sn.edu.ugb.student.web.rest.errors.BadRequestAlertException;
 import tech.jhipster.web.util.HeaderUtil;
 import tech.jhipster.web.util.PaginationUtil;
 import tech.jhipster.web.util.ResponseUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * REST controller for managing {@link sn.edu.ugb.student.domain.Etudiant}.
  */
 @RestController
 @RequestMapping("/api/etudiants")
+@Tag(name = "Etudiant", description = "Gestion des étudiants")
 public class EtudiantResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(EtudiantResource.class);
@@ -55,7 +60,20 @@ public class EtudiantResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("")
-    public ResponseEntity<EtudiantDTO> createEtudiant(@Valid @RequestBody EtudiantDTO etudiantDTO) throws URISyntaxException {
+    @Operation(
+        summary = "Créer un nouvel étudiant",
+        description = "Enregistre un nouvel étudiant dans le système",
+        responses = {
+            @ApiResponse(responseCode = "201", description = "Étudiant créé avec succès"),
+            @ApiResponse(responseCode = "400", description = "Requête invalide"),
+            @ApiResponse(responseCode = "401", description = "Non autorisé"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé")
+        }
+    )
+    public ResponseEntity<EtudiantDTO> createEtudiant(
+        @Parameter(description = "DTO de l'étudiant à créer", required = true)
+        @Valid @RequestBody EtudiantDTO etudiantDTO
+    ) throws URISyntaxException {
         LOG.debug("REST request to save Etudiant : {}", etudiantDTO);
         if (etudiantDTO.getId() != null) {
             throw new BadRequestAlertException("A new etudiant cannot already have an ID", ENTITY_NAME, "idexists");
@@ -77,8 +95,20 @@ public class EtudiantResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/{id}")
+    @Operation(
+        summary = "Mettre à jour un étudiant",
+        description = "Met à jour toutes les informations d'un étudiant existant",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Étudiant mis à jour"),
+            @ApiResponse(responseCode = "400", description = "Données invalides"),
+            @ApiResponse(responseCode = "404", description = "Étudiant non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     public ResponseEntity<EtudiantDTO> updateEtudiant(
+        @Parameter(description = "ID de l'étudiant à mettre à jour", required = true)
         @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "DTO de l'étudiant avec les nouvelles valeurs", required = true)
         @Valid @RequestBody EtudiantDTO etudiantDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to update Etudiant : {}, {}", id, etudiantDTO);
@@ -111,8 +141,20 @@ public class EtudiantResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
+    @Operation(
+        summary = "Mise à jour partielle d'un étudiant",
+        description = "Met à jour seulement les champs spécifiés d'un étudiant",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Étudiant partiellement mis à jour"),
+            @ApiResponse(responseCode = "400", description = "Données invalides"),
+            @ApiResponse(responseCode = "404", description = "Étudiant non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     public ResponseEntity<EtudiantDTO> partialUpdateEtudiant(
+        @Parameter(description = "ID de l'étudiant à mettre à jour", required = true)
         @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "DTO partiel de l'étudiant avec les champs à mettre à jour", required = true)
         @NotNull @RequestBody EtudiantDTO etudiantDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to partial update Etudiant partially : {}, {}", id, etudiantDTO);
@@ -142,7 +184,19 @@ public class EtudiantResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of etudiants in body.
      */
     @GetMapping("")
-    public ResponseEntity<List<EtudiantDTO>> getAllEtudiants(@org.springdoc.core.annotations.ParameterObject Pageable pageable) {
+    @Operation(
+        summary = "Lister tous les étudiants",
+        description = "Retourne une liste paginée de tous les étudiants",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Liste des étudiants récupérée"),
+            @ApiResponse(responseCode = "401", description = "Non autorisé"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé")
+        }
+    )
+    public ResponseEntity<List<EtudiantDTO>> getAllEtudiants(
+        @Parameter(description = "Paramètres de pagination (page, size, sort)")
+        @org.springdoc.core.annotations.ParameterObject Pageable pageable
+    ) {
         LOG.debug("REST request to get a page of Etudiants");
         Page<EtudiantDTO> page = etudiantService.findAll(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
@@ -156,7 +210,18 @@ public class EtudiantResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the etudiantDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<EtudiantDTO> getEtudiant(@PathVariable("id") Long id) {
+    @Operation(
+        summary = "Obtenir un étudiant par ID",
+        description = "Retourne les détails d'un étudiant spécifique",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Étudiant trouvé"),
+            @ApiResponse(responseCode = "404", description = "Étudiant non trouvé")
+        }
+    )
+    public ResponseEntity<EtudiantDTO> getEtudiant(
+        @Parameter(description = "ID de l'étudiant à récupérer", required = true)
+        @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to get Etudiant : {}", id);
         Optional<EtudiantDTO> etudiantDTO = etudiantService.findOne(id);
         return ResponseUtil.wrapOrNotFound(etudiantDTO);
@@ -169,7 +234,18 @@ public class EtudiantResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEtudiant(@PathVariable("id") Long id) {
+    @Operation(
+        summary = "Supprimer un étudiant",
+        description = "Supprime définitivement un étudiant du système",
+        responses = {
+            @ApiResponse(responseCode = "204", description = "Étudiant supprimé"),
+            @ApiResponse(responseCode = "404", description = "Étudiant non trouvé")
+        }
+    )
+    public ResponseEntity<Void> deleteEtudiant(
+        @Parameter(description = "ID de l'étudiant à supprimer", required = true)
+        @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to delete Etudiant : {}", id);
         etudiantService.delete(id);
         return ResponseEntity.noContent()

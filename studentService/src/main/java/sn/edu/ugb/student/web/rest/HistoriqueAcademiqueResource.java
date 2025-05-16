@@ -23,12 +23,17 @@ import sn.edu.ugb.student.web.rest.errors.BadRequestAlertException;
 import tech.jhipster.web.util.HeaderUtil;
 import tech.jhipster.web.util.PaginationUtil;
 import tech.jhipster.web.util.ResponseUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * REST controller for managing {@link sn.edu.ugb.student.domain.HistoriqueAcademique}.
  */
 @RestController
 @RequestMapping("/api/historique-academiques")
+@Tag(name = "Historique Académique", description = "Gestion de l'historique académique des étudiants")
 public class HistoriqueAcademiqueResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(HistoriqueAcademiqueResource.class);
@@ -58,7 +63,18 @@ public class HistoriqueAcademiqueResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("")
+    @Operation(
+        summary = "Créer un nouvel historique académique",
+        description = "Enregistre un nouvel historique académique pour un étudiant",
+        responses = {
+            @ApiResponse(responseCode = "201", description = "Historique créé"),
+            @ApiResponse(responseCode = "400", description = "Données invalides"),
+            @ApiResponse(responseCode = "401", description = "Non autorisé"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé")
+        }
+    )
     public ResponseEntity<HistoriqueAcademiqueDTO> createHistoriqueAcademique(
+        @Parameter(description = "DTO de l'historique académique à créer", required = true)
         @Valid @RequestBody HistoriqueAcademiqueDTO historiqueAcademiqueDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to save HistoriqueAcademique : {}", historiqueAcademiqueDTO);
@@ -82,8 +98,20 @@ public class HistoriqueAcademiqueResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/{id}")
+    @Operation(
+        summary = "Mettre à jour un historique académique",
+        description = "Met à jour toutes les informations d'un historique académique",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Historique mis à jour"),
+            @ApiResponse(responseCode = "400", description = "Données invalides"),
+            @ApiResponse(responseCode = "404", description = "Historique non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     public ResponseEntity<HistoriqueAcademiqueDTO> updateHistoriqueAcademique(
+        @Parameter(description = "ID de l'historique à mettre à jour", required = true)
         @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "DTO de l'historique avec les nouvelles valeurs", required = true)
         @Valid @RequestBody HistoriqueAcademiqueDTO historiqueAcademiqueDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to update HistoriqueAcademique : {}, {}", id, historiqueAcademiqueDTO);
@@ -116,8 +144,20 @@ public class HistoriqueAcademiqueResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
+    @Operation(
+        summary = "Mise à jour partielle d'un historique académique",
+        description = "Met à jour seulement les champs spécifiés d'un historique académique",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Historique partiellement mis à jour"),
+            @ApiResponse(responseCode = "400", description = "Données invalides"),
+            @ApiResponse(responseCode = "404", description = "Historique non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     public ResponseEntity<HistoriqueAcademiqueDTO> partialUpdateHistoriqueAcademique(
+        @Parameter(description = "ID de l'historique à mettre à jour", required = true)
         @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "DTO partiel de l'historique avec les champs à mettre à jour", required = true)
         @NotNull @RequestBody HistoriqueAcademiqueDTO historiqueAcademiqueDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to partial update HistoriqueAcademique partially : {}, {}", id, historiqueAcademiqueDTO);
@@ -147,7 +187,17 @@ public class HistoriqueAcademiqueResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of historiqueAcademiques in body.
      */
     @GetMapping("")
+    @Operation(
+        summary = "Lister tous les historiques académiques",
+        description = "Retourne une liste paginée de tous les historiques académiques",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Liste des historiques récupérée"),
+            @ApiResponse(responseCode = "401", description = "Non autorisé"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé")
+        }
+    )
     public ResponseEntity<List<HistoriqueAcademiqueDTO>> getAllHistoriqueAcademiques(
+        @Parameter(description = "Paramètres de pagination (page, size, sort)")
         @org.springdoc.core.annotations.ParameterObject Pageable pageable
     ) {
         LOG.debug("REST request to get a page of HistoriqueAcademiques");
@@ -163,7 +213,18 @@ public class HistoriqueAcademiqueResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the historiqueAcademiqueDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<HistoriqueAcademiqueDTO> getHistoriqueAcademique(@PathVariable("id") Long id) {
+    @Operation(
+        summary = "Obtenir un historique académique par ID",
+        description = "Retourne les détails d'un historique académique spécifique",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Historique trouvé"),
+            @ApiResponse(responseCode = "404", description = "Historique non trouvé")
+        }
+    )
+    public ResponseEntity<HistoriqueAcademiqueDTO> getHistoriqueAcademique(
+        @Parameter(description = "ID de l'historique à récupérer", required = true)
+        @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to get HistoriqueAcademique : {}", id);
         Optional<HistoriqueAcademiqueDTO> historiqueAcademiqueDTO = historiqueAcademiqueService.findOne(id);
         return ResponseUtil.wrapOrNotFound(historiqueAcademiqueDTO);
@@ -176,7 +237,18 @@ public class HistoriqueAcademiqueResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteHistoriqueAcademique(@PathVariable("id") Long id) {
+    @Operation(
+        summary = "Supprimer un historique académique",
+        description = "Supprime définitivement un historique académique",
+        responses = {
+            @ApiResponse(responseCode = "204", description = "Historique supprimé"),
+            @ApiResponse(responseCode = "404", description = "Historique non trouvé")
+        }
+    )
+    public ResponseEntity<Void> deleteHistoriqueAcademique(
+        @Parameter(description = "ID de l'historique à supprimer", required = true)
+        @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to delete HistoriqueAcademique : {}", id);
         historiqueAcademiqueService.delete(id);
         return ResponseEntity.noContent()

@@ -6,10 +6,15 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+/**
+ * Entité représentant un étudiant
+ */
 @Entity
 @Table(name = "etudiant")
 @SuppressWarnings("common-java:DuplicatedBlocks")
+@Schema(description = "Entité représentant un étudiant")
 public class Etudiant implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -17,24 +22,34 @@ public class Etudiant implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
     @SequenceGenerator(name = "sequenceGenerator")
+    @Schema(description = "ID unique de l'étudiant", example = "1")
     private Long id;
 
     @NotNull
     @Column(unique = true)
+    @Schema(description = "Numéro unique de l'étudiant", requiredMode = Schema.RequiredMode.REQUIRED, example = "ET20230001")
     private String numeroEtudiant;
 
+    @Schema(description = "Date de naissance de l'étudiant", example = "2000-01-15")
     private LocalDate dateNaissance;
+
+    @Schema(description = "Adresse de l'étudiant", example = "123 Rue de l'Université, Dakar")
     private String adresse;
+
+    @Schema(description = "Formation actuelle de l'étudiant", example = "Licence Informatique")
     private String formationActuelle;
 
     @NotNull
     @Column(name = "utilisateur_id")
+    @Schema(description = "ID de l'utilisateur associé", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Long utilisateurId;
 
     @OneToMany(mappedBy = "etudiant", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Schema(description = "Historiques académiques de l'étudiant")
     private Set<HistoriqueAcademique> historiques = new HashSet<>();
 
     @OneToMany(mappedBy = "etudiant", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Schema(description = "Inscriptions de l'étudiant")
     private Set<Inscription> inscriptions = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here

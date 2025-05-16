@@ -7,11 +7,16 @@ import java.time.Instant;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import sn.edu.ugb.student.domain.enumeration.StatutAcademique;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+/**
+ * Entité représentant l'historique académique d'un étudiant
+ */
 @Entity
 @Table(name = "historique_academique")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
+@Schema(description = "Entité représentant l'historique académique d'un étudiant pour un semestre")
 public class HistoriqueAcademique implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -20,23 +25,31 @@ public class HistoriqueAcademique implements Serializable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
     @SequenceGenerator(name = "sequenceGenerator")
     @Column(name = "id")
+    @Schema(description = "ID unique de l'historique académique", example = "1")
     private Long id;
 
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "statut", nullable = false)
+    @Schema(description = "Statut académique de l'étudiant",
+        requiredMode = Schema.RequiredMode.REQUIRED,
+        example = "EN_COURS",
+        allowableValues = {"EN_COURS", "VALIDE", "ABANDON"})
     private StatutAcademique statut;
 
     @NotNull
     @Column(name = "date_inscription", nullable = false)
+    @Schema(description = "Date d'inscription", requiredMode = Schema.RequiredMode.REQUIRED, example = "2023-09-01T00:00:00Z")
     private Instant dateInscription;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "etudiant_id", nullable = false)
+    @Schema(description = "Étudiant associé à l'historique académique")
     private Etudiant etudiant;
 
     @NotNull
     @Column(name = "semestre_id", nullable = false)
+    @Schema(description = "ID du semestre", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Long semestreId;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
