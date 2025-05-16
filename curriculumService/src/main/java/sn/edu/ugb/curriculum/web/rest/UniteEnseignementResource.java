@@ -1,5 +1,11 @@
 package sn.edu.ugb.curriculum.web.rest;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;
@@ -29,6 +35,7 @@ import tech.jhipster.web.util.ResponseUtil;
  */
 @RestController
 @RequestMapping("/api/unite-enseignements")
+@Tag(name = "Unité d'Enseignement", description = "Gestion des unités d'enseignement (modules)")
 public class UniteEnseignementResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(UniteEnseignementResource.class);
@@ -57,6 +64,15 @@ public class UniteEnseignementResource {
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new uniteEnseignementDTO, or with status {@code 400 (Bad Request)} if the uniteEnseignement has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    @Operation(
+        summary = "Créer une nouvelle unité d'enseignement",
+        description = "Enregistre une nouvelle unité d'enseignement (module) dans le système",
+        responses = {
+            @ApiResponse(responseCode = "201", description = "Unité d'enseignement créée avec succès", content = @Content(schema = @Schema(implementation = UniteEnseignementDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Requête invalide (ex: ID déjà existant)"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @PostMapping("")
     public ResponseEntity<UniteEnseignementDTO> createUniteEnseignement(@Valid @RequestBody UniteEnseignementDTO uniteEnseignementDTO)
         throws URISyntaxException {
@@ -80,9 +96,19 @@ public class UniteEnseignementResource {
      * or with status {@code 500 (Internal Server Error)} if the uniteEnseignementDTO couldn't be updated.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    @Operation(
+        summary = "Mettre à jour une unité d'enseignement existante",
+        description = "Met à jour toutes les propriétés d'une unité d'enseignement existante",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Unité d'enseignement mise à jour avec succès", content = @Content(schema = @Schema(implementation = UniteEnseignementDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Requête invalide"),
+            @ApiResponse(responseCode = "404", description = "Unité d'enseignement non trouvée"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @PutMapping("/{id}")
     public ResponseEntity<UniteEnseignementDTO> updateUniteEnseignement(
-        @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "ID de l'unité d'enseignement à mettre à jour", required = true) @PathVariable(value = "id", required = false) final Long id,
         @Valid @RequestBody UniteEnseignementDTO uniteEnseignementDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to update UniteEnseignement : {}, {}", id, uniteEnseignementDTO);
@@ -114,9 +140,19 @@ public class UniteEnseignementResource {
      * or with status {@code 500 (Internal Server Error)} if the uniteEnseignementDTO couldn't be updated.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    @Operation(
+        summary = "Mise à jour partielle d'une unité d'enseignement",
+        description = "Met à jour uniquement les champs spécifiés d'une unité d'enseignement existante",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Unité d'enseignement partiellement mise à jour", content = @Content(schema = @Schema(implementation = UniteEnseignementDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Requête invalide"),
+            @ApiResponse(responseCode = "404", description = "Unité d'enseignement non trouvée"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
     public ResponseEntity<UniteEnseignementDTO> partialUpdateUniteEnseignement(
-        @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "ID de l'unité d'enseignement à mettre à jour partiellement", required = true) @PathVariable(value = "id", required = false) final Long id,
         @NotNull @RequestBody UniteEnseignementDTO uniteEnseignementDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to partial update UniteEnseignement partially : {}, {}", id, uniteEnseignementDTO);
@@ -145,6 +181,14 @@ public class UniteEnseignementResource {
      * @param pageable the pagination information.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of uniteEnseignements in body.
      */
+    @Operation(
+        summary = "Lister toutes les unités d'enseignement",
+        description = "Retourne une liste paginée de toutes les unités d'enseignement (modules)",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Liste des unités d'enseignement récupérée avec succès", content = @Content(schema = @Schema(implementation = Page.class))),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @GetMapping("")
     public ResponseEntity<List<UniteEnseignementDTO>> getAllUniteEnseignements(
         @org.springdoc.core.annotations.ParameterObject Pageable pageable
@@ -161,8 +205,19 @@ public class UniteEnseignementResource {
      * @param id the id of the uniteEnseignementDTO to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the uniteEnseignementDTO, or with status {@code 404 (Not Found)}.
      */
+    @Operation(
+        summary = "Obtenir une unité d'enseignement par son ID",
+        description = "Retourne les détails d'une unité d'enseignement spécifique",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Unité d'enseignement trouvée", content = @Content(schema = @Schema(implementation = UniteEnseignementDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Unité d'enseignement non trouvée"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @GetMapping("/{id}")
-    public ResponseEntity<UniteEnseignementDTO> getUniteEnseignement(@PathVariable("id") Long id) {
+    public ResponseEntity<UniteEnseignementDTO> getUniteEnseignement(
+        @Parameter(description = "ID de l'unité d'enseignement à récupérer", required = true) @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to get UniteEnseignement : {}", id);
         Optional<UniteEnseignementDTO> uniteEnseignementDTO = uniteEnseignementService.findOne(id);
         return ResponseUtil.wrapOrNotFound(uniteEnseignementDTO);
@@ -174,8 +229,19 @@ public class UniteEnseignementResource {
      * @param id the id of the uniteEnseignementDTO to delete.
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
+    @Operation(
+        summary = "Supprimer une unité d'enseignement",
+        description = "Supprime une unité d'enseignement spécifique de la base de données",
+        responses = {
+            @ApiResponse(responseCode = "204", description = "Unité d'enseignement supprimée avec succès"),
+            @ApiResponse(responseCode = "404", description = "Unité d'enseignement non trouvée"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUniteEnseignement(@PathVariable("id") Long id) {
+    public ResponseEntity<Void> deleteUniteEnseignement(
+        @Parameter(description = "ID de l'unité d'enseignement à supprimer", required = true) @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to delete UniteEnseignement : {}", id);
         uniteEnseignementService.delete(id);
         return ResponseEntity.noContent()

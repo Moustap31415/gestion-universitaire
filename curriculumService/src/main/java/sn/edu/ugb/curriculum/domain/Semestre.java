@@ -9,11 +9,16 @@ import java.util.Set;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import sn.edu.ugb.curriculum.domain.enumeration.NomSemestre;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+/**
+ * Entité représentant un semestre académique
+ */
 @Entity
 @Table(name = "semestre")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
+@Schema(description = "Semestre académique avec ses dates de début et fin")
 public class Semestre implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -22,25 +27,32 @@ public class Semestre implements Serializable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
     @SequenceGenerator(name = "sequenceGenerator")
     @Column(name = "id")
+    @Schema(description = "ID unique du semestre", example = "1")
     private Long id;
 
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "nom", nullable = false)
+    @Schema(description = "Nom du semestre",
+        requiredMode = Schema.RequiredMode.REQUIRED,
+        example = "Semestre1",
+        allowableValues = {"Semestre1", "Semestre2"})
     private NomSemestre nom;
 
     @NotNull
     @Column(name = "date_debut", nullable = false)
+    @Schema(description = "Date de début du semestre", requiredMode = Schema.RequiredMode.REQUIRED, example = "2023-09-01")
     private LocalDate dateDebut;
 
     @NotNull
     @Column(name = "date_fin", nullable = false)
+    @Schema(description = "Date de fin du semestre", requiredMode = Schema.RequiredMode.REQUIRED, example = "2024-01-31")
     private LocalDate dateFin;
 
     @OneToMany(mappedBy = "semestre", cascade = CascadeType.ALL, orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @Schema(description = "Curricula associés à ce semestre")
     private Set<Curriculum> curricula = new HashSet<>();
-
     // jhipster-needle-entity-add-field - JHipster will add fields here
 
     public Long getId() {

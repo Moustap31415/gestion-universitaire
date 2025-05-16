@@ -1,5 +1,11 @@
 package sn.edu.ugb.curriculum.web.rest;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;
@@ -29,6 +35,7 @@ import tech.jhipster.web.util.ResponseUtil;
  */
 @RestController
 @RequestMapping("/api/curricula")
+@Tag(name = "Curriculum", description = "Gestion des curriculums (associations filière-module-semestre)")
 public class CurriculumResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(CurriculumResource.class);
@@ -54,6 +61,15 @@ public class CurriculumResource {
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new curriculumDTO, or with status {@code 400 (Bad Request)} if the curriculum has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    @Operation(
+        summary = "Créer un nouveau curriculum",
+        description = "Crée une nouvelle association entre une filière, un module et un semestre",
+        responses = {
+            @ApiResponse(responseCode = "201", description = "Curriculum créé avec succès", content = @Content(schema = @Schema(implementation = CurriculumDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Requête invalide (ex: ID déjà existant)"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @PostMapping("")
     public ResponseEntity<CurriculumDTO> createCurriculum(@Valid @RequestBody CurriculumDTO curriculumDTO) throws URISyntaxException {
         LOG.debug("REST request to save Curriculum : {}", curriculumDTO);
@@ -76,9 +92,19 @@ public class CurriculumResource {
      * or with status {@code 500 (Internal Server Error)} if the curriculumDTO couldn't be updated.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    @Operation(
+        summary = "Mettre à jour un curriculum existant",
+        description = "Met à jour toutes les propriétés d'un curriculum existant",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Curriculum mis à jour avec succès", content = @Content(schema = @Schema(implementation = CurriculumDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Requête invalide"),
+            @ApiResponse(responseCode = "404", description = "Curriculum non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @PutMapping("/{id}")
     public ResponseEntity<CurriculumDTO> updateCurriculum(
-        @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "ID du curriculum à mettre à jour", required = true) @PathVariable(value = "id", required = false) final Long id,
         @Valid @RequestBody CurriculumDTO curriculumDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to update Curriculum : {}, {}", id, curriculumDTO);
@@ -110,9 +136,19 @@ public class CurriculumResource {
      * or with status {@code 500 (Internal Server Error)} if the curriculumDTO couldn't be updated.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    @Operation(
+        summary = "Mise à jour partielle d'un curriculum",
+        description = "Met à jour uniquement les champs spécifiés d'un curriculum existant",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Curriculum partiellement mis à jour", content = @Content(schema = @Schema(implementation = CurriculumDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Requête invalide"),
+            @ApiResponse(responseCode = "404", description = "Curriculum non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
     public ResponseEntity<CurriculumDTO> partialUpdateCurriculum(
-        @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "ID du curriculum à mettre à jour partiellement", required = true) @PathVariable(value = "id", required = false) final Long id,
         @NotNull @RequestBody CurriculumDTO curriculumDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to partial update Curriculum partially : {}, {}", id, curriculumDTO);
@@ -141,6 +177,14 @@ public class CurriculumResource {
      * @param pageable the pagination information.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of curricula in body.
      */
+    @Operation(
+        summary = "Lister tous les curriculums",
+        description = "Retourne une liste paginée de tous les curriculums",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Liste des curriculums récupérée avec succès", content = @Content(schema = @Schema(implementation = Page.class))),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @GetMapping("")
     public ResponseEntity<List<CurriculumDTO>> getAllCurricula(@org.springdoc.core.annotations.ParameterObject Pageable pageable) {
         LOG.debug("REST request to get a page of Curricula");
@@ -155,8 +199,19 @@ public class CurriculumResource {
      * @param id the id of the curriculumDTO to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the curriculumDTO, or with status {@code 404 (Not Found)}.
      */
+    @Operation(
+        summary = "Obtenir un curriculum par son ID",
+        description = "Retourne les détails d'un curriculum spécifique",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Curriculum trouvé", content = @Content(schema = @Schema(implementation = CurriculumDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Curriculum non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @GetMapping("/{id}")
-    public ResponseEntity<CurriculumDTO> getCurriculum(@PathVariable("id") Long id) {
+    public ResponseEntity<CurriculumDTO> getCurriculum(
+        @Parameter(description = "ID du curriculum à récupérer", required = true) @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to get Curriculum : {}", id);
         Optional<CurriculumDTO> curriculumDTO = curriculumService.findOne(id);
         return ResponseUtil.wrapOrNotFound(curriculumDTO);
@@ -168,8 +223,19 @@ public class CurriculumResource {
      * @param id the id of the curriculumDTO to delete.
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
+    @Operation(
+        summary = "Supprimer un curriculum",
+        description = "Supprime un curriculum spécifique de la base de données",
+        responses = {
+            @ApiResponse(responseCode = "204", description = "Curriculum supprimé avec succès"),
+            @ApiResponse(responseCode = "404", description = "Curriculum non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCurriculum(@PathVariable("id") Long id) {
+    public ResponseEntity<Void> deleteCurriculum(
+        @Parameter(description = "ID du curriculum à supprimer", required = true) @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to delete Curriculum : {}", id);
         curriculumService.delete(id);
         return ResponseEntity.noContent()

@@ -45,11 +45,8 @@ public class CurriculumAsserts {
      * @param actual the actual entity
      */
     public static void assertCurriculumUpdatableFieldsEquals(Curriculum expected, Curriculum actual) {
-        assertThat(actual)
-            .as("Verify Curriculum relevant properties")
-            .satisfies(a -> assertThat(a.getFiliereId()).as("check filiereId").isEqualTo(expected.getFiliereId()))
-            .satisfies(a -> assertThat(a.getModuleId()).as("check moduleId").isEqualTo(expected.getModuleId()))
-            .satisfies(a -> assertThat(a.getSemestreId()).as("check semestreId").isEqualTo(expected.getSemestreId()));
+        // Curriculum n'a pas de champs updatables autres que les relations
+        // Cette méthode peut rester vide ou contenir des assertions sur d'éventuels champs
     }
 
     /**
@@ -59,6 +56,10 @@ public class CurriculumAsserts {
      * @param actual the actual entity
      */
     public static void assertCurriculumUpdatableRelationshipsEquals(Curriculum expected, Curriculum actual) {
-        // empty method
+        assertThat(actual)
+            .as("Verify Curriculum relationships")
+            .satisfies(a -> assertThat(a.getFiliere()).as("check filiere").isEqualTo(expected.getFiliere()))
+            .satisfies(a -> assertThat(a.getUniteEnseignement()).as("check uniteEnseignement").isEqualTo(expected.getUniteEnseignement()))
+            .satisfies(a -> assertThat(a.getSemestre()).as("check semestre").isEqualTo(expected.getSemestre()));
     }
 }

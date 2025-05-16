@@ -49,8 +49,7 @@ public class MatiereAsserts {
             .as("Verify Matiere relevant properties")
             .satisfies(a -> assertThat(a.getNom()).as("check nom").isEqualTo(expected.getNom()))
             .satisfies(a -> assertThat(a.getHeures()).as("check heures").isEqualTo(expected.getHeures()))
-            .satisfies(a -> assertThat(a.getCredits()).as("check credits").isEqualTo(expected.getCredits()))
-            .satisfies(a -> assertThat(a.getModuleId()).as("check moduleId").isEqualTo(expected.getModuleId()));
+            .satisfies(a -> assertThat(a.getCredits()).as("check credits").isEqualTo(expected.getCredits()));
     }
 
     /**
@@ -60,6 +59,8 @@ public class MatiereAsserts {
      * @param actual the actual entity
      */
     public static void assertMatiereUpdatableRelationshipsEquals(Matiere expected, Matiere actual) {
-        // empty method
+        assertThat(actual)
+            .as("Verify Matiere relationships")
+            .satisfies(a -> assertThat(a.getUniteEnseignement()).as("check uniteEnseignement").isEqualTo(expected.getUniteEnseignement()));
     }
 }

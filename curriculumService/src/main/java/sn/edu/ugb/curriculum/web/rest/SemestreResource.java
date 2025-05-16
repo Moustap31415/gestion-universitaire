@@ -1,5 +1,11 @@
 package sn.edu.ugb.curriculum.web.rest;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;
@@ -29,6 +35,7 @@ import tech.jhipster.web.util.ResponseUtil;
  */
 @RestController
 @RequestMapping("/api/semestres")
+@Tag(name = "Semestre", description = "Gestion des semestres académiques")
 public class SemestreResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(SemestreResource.class);
@@ -54,6 +61,15 @@ public class SemestreResource {
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new semestreDTO, or with status {@code 400 (Bad Request)} if the semestre has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    @Operation(
+        summary = "Créer un nouveau semestre",
+        description = "Enregistre un nouveau semestre académique dans le système",
+        responses = {
+            @ApiResponse(responseCode = "201", description = "Semestre créé avec succès", content = @Content(schema = @Schema(implementation = SemestreDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Requête invalide (ex: ID déjà existant)"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @PostMapping("")
     public ResponseEntity<SemestreDTO> createSemestre(@Valid @RequestBody SemestreDTO semestreDTO) throws URISyntaxException {
         LOG.debug("REST request to save Semestre : {}", semestreDTO);
@@ -76,9 +92,19 @@ public class SemestreResource {
      * or with status {@code 500 (Internal Server Error)} if the semestreDTO couldn't be updated.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    @Operation(
+        summary = "Mettre à jour un semestre existant",
+        description = "Met à jour toutes les propriétés d'un semestre existant",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Semestre mis à jour avec succès", content = @Content(schema = @Schema(implementation = SemestreDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Requête invalide"),
+            @ApiResponse(responseCode = "404", description = "Semestre non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @PutMapping("/{id}")
     public ResponseEntity<SemestreDTO> updateSemestre(
-        @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "ID du semestre à mettre à jour", required = true) @PathVariable(value = "id", required = false) final Long id,
         @Valid @RequestBody SemestreDTO semestreDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to update Semestre : {}, {}", id, semestreDTO);
@@ -110,9 +136,19 @@ public class SemestreResource {
      * or with status {@code 500 (Internal Server Error)} if the semestreDTO couldn't be updated.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    @Operation(
+        summary = "Mise à jour partielle d'un semestre",
+        description = "Met à jour uniquement les champs spécifiés d'un semestre existant",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Semestre partiellement mis à jour", content = @Content(schema = @Schema(implementation = SemestreDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Requête invalide"),
+            @ApiResponse(responseCode = "404", description = "Semestre non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
     public ResponseEntity<SemestreDTO> partialUpdateSemestre(
-        @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "ID du semestre à mettre à jour partiellement", required = true) @PathVariable(value = "id", required = false) final Long id,
         @NotNull @RequestBody SemestreDTO semestreDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to partial update Semestre partially : {}, {}", id, semestreDTO);
@@ -131,8 +167,7 @@ public class SemestreResource {
 
         return ResponseUtil.wrapOrNotFound(
             result,
-            HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, semestreDTO.getId().toString())
-        );
+            HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, semestreDTO.getId().toString()));
     }
 
     /**
@@ -141,6 +176,14 @@ public class SemestreResource {
      * @param pageable the pagination information.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of semestres in body.
      */
+    @Operation(
+        summary = "Lister tous les semestres",
+        description = "Retourne une liste paginée de tous les semestres académiques",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Liste des semestres récupérée avec succès", content = @Content(schema = @Schema(implementation = Page.class))),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @GetMapping("")
     public ResponseEntity<List<SemestreDTO>> getAllSemestres(@org.springdoc.core.annotations.ParameterObject Pageable pageable) {
         LOG.debug("REST request to get a page of Semestres");
@@ -155,8 +198,19 @@ public class SemestreResource {
      * @param id the id of the semestreDTO to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the semestreDTO, or with status {@code 404 (Not Found)}.
      */
+    @Operation(
+        summary = "Obtenir un semestre par son ID",
+        description = "Retourne les détails d'un semestre spécifique",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Semestre trouvé", content = @Content(schema = @Schema(implementation = SemestreDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Semestre non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @GetMapping("/{id}")
-    public ResponseEntity<SemestreDTO> getSemestre(@PathVariable("id") Long id) {
+    public ResponseEntity<SemestreDTO> getSemestre(
+        @Parameter(description = "ID du semestre à récupérer", required = true) @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to get Semestre : {}", id);
         Optional<SemestreDTO> semestreDTO = semestreService.findOne(id);
         return ResponseUtil.wrapOrNotFound(semestreDTO);
@@ -168,8 +222,19 @@ public class SemestreResource {
      * @param id the id of the semestreDTO to delete.
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
+    @Operation(
+        summary = "Supprimer un semestre",
+        description = "Supprime un semestre spécifique de la base de données",
+        responses = {
+            @ApiResponse(responseCode = "204", description = "Semestre supprimé avec succès"),
+            @ApiResponse(responseCode = "404", description = "Semestre non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSemestre(@PathVariable("id") Long id) {
+    public ResponseEntity<Void> deleteSemestre(
+        @Parameter(description = "ID du semestre à supprimer", required = true) @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to delete Semestre : {}", id);
         semestreService.delete(id);
         return ResponseEntity.noContent()

@@ -7,11 +7,16 @@ import java.util.HashSet;
 import java.util.Set;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+/**
+ * Entité représentant une unité d'enseignement (UE)
+ */
 @Entity
 @Table(name = "unite_enseignement")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
+@Schema(description = "Unité d'enseignement (UE) regroupant plusieurs matières")
 public class UniteEnseignement implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -20,26 +25,32 @@ public class UniteEnseignement implements Serializable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
     @SequenceGenerator(name = "sequenceGenerator")
     @Column(name = "id")
+    @Schema(description = "ID unique de l'unité d'enseignement", example = "1")
     private Long id;
 
     @NotNull
     @Column(name = "nom", nullable = false)
+    @Schema(description = "Nom complet de l'UE", requiredMode = Schema.RequiredMode.REQUIRED, example = "Fondamentaux de l'informatique")
     private String nom;
 
     @NotNull
     @Column(name = "code", nullable = false, unique = true)
+    @Schema(description = "Code unique de l'UE", requiredMode = Schema.RequiredMode.REQUIRED, example = "UE-INFO-101")
     private String code;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "filiere_id", nullable = false)
+    @Schema(description = "Filière à laquelle appartient l'UE")
     private Filiere filiere;
 
     @OneToMany(mappedBy = "uniteEnseignement", cascade = CascadeType.ALL, orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @Schema(description = "Matières composant cette UE")
     private Set<Matiere> matieres = new HashSet<>();
 
     @OneToMany(mappedBy = "uniteEnseignement", cascade = CascadeType.ALL, orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @Schema(description = "Curricula associés à cette UE")
     private Set<Curriculum> curricula = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here

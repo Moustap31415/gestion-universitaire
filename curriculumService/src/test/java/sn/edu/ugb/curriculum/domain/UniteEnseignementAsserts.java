@@ -48,8 +48,7 @@ public class UniteEnseignementAsserts {
         assertThat(actual)
             .as("Verify UniteEnseignement relevant properties")
             .satisfies(a -> assertThat(a.getNom()).as("check nom").isEqualTo(expected.getNom()))
-            .satisfies(a -> assertThat(a.getCode()).as("check code").isEqualTo(expected.getCode()))
-            .satisfies(a -> assertThat(a.getFiliereId()).as("check filiereId").isEqualTo(expected.getFiliereId()));
+            .satisfies(a -> assertThat(a.getCode()).as("check code").isEqualTo(expected.getCode()));
     }
 
     /**
@@ -59,6 +58,10 @@ public class UniteEnseignementAsserts {
      * @param actual the actual entity
      */
     public static void assertUniteEnseignementUpdatableRelationshipsEquals(UniteEnseignement expected, UniteEnseignement actual) {
-        // empty method
+        assertThat(actual)
+            .as("Verify UniteEnseignement relationships")
+            .satisfies(a -> assertThat(a.getFiliere()).as("check filiere").isEqualTo(expected.getFiliere()))
+            .satisfies(a -> assertThat(a.getMatieres()).as("check matieres").isEqualTo(expected.getMatieres()))
+            .satisfies(a -> assertThat(a.getCurricula()).as("check curricula").isEqualTo(expected.getCurricula()));
     }
 }

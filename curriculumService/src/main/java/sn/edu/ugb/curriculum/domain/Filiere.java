@@ -7,11 +7,16 @@ import java.util.HashSet;
 import java.util.Set;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+/**
+ * Entité représentant une filière de formation
+ */
 @Entity
 @Table(name = "filiere")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
+@Schema(description = "Filière de formation proposée par l'établissement")
 public class Filiere implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -20,22 +25,27 @@ public class Filiere implements Serializable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
     @SequenceGenerator(name = "sequenceGenerator")
     @Column(name = "id")
+    @Schema(description = "ID unique de la filière", example = "1")
     private Long id;
 
     @NotNull
     @Column(name = "nom", nullable = false)
+    @Schema(description = "Nom complet de la filière", requiredMode = Schema.RequiredMode.REQUIRED, example = "Licence Informatique")
     private String nom;
 
     @NotNull
     @Column(name = "code", nullable = false, unique = true)
+    @Schema(description = "Code unique de la filière", requiredMode = Schema.RequiredMode.REQUIRED, example = "INFO-LIC")
     private String code;
 
     @OneToMany(mappedBy = "filiere", cascade = CascadeType.ALL, orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @Schema(description = "Unités d'enseignement de la filière")
     private Set<UniteEnseignement> unitesEnseignement = new HashSet<>();
 
     @OneToMany(mappedBy = "filiere", cascade = CascadeType.ALL, orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @Schema(description = "Curricula associés à la filière")
     private Set<Curriculum> curricula = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here

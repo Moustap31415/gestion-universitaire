@@ -23,7 +23,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import sn.edu.ugb.curriculum.IntegrationTest;
 import sn.edu.ugb.curriculum.domain.Matiere;
+import sn.edu.ugb.curriculum.domain.UniteEnseignement;
 import sn.edu.ugb.curriculum.repository.MatiereRepository;
+import sn.edu.ugb.curriculum.repository.UniteEnseignementRepository;
 import sn.edu.ugb.curriculum.service.dto.MatiereDTO;
 import sn.edu.ugb.curriculum.service.mapper.MatiereMapper;
 
@@ -44,9 +46,6 @@ class MatiereResourceIT {
     private static final Integer DEFAULT_CREDITS = 1;
     private static final Integer UPDATED_CREDITS = 2;
 
-    private static final Long DEFAULT_MODULE_ID = 1L;
-    private static final Long UPDATED_MODULE_ID = 2L;
-
     private static final String ENTITY_API_URL = "/api/matieres";
     private static final String ENTITY_API_URL_ID = ENTITY_API_URL + "/{id}";
 
@@ -60,6 +59,9 @@ class MatiereResourceIT {
     private MatiereRepository matiereRepository;
 
     @Autowired
+    private UniteEnseignementRepository uniteEnseignementRepository;
+
+    @Autowired
     private MatiereMapper matiereMapper;
 
     @Autowired
@@ -69,7 +71,7 @@ class MatiereResourceIT {
     private MockMvc restMatiereMockMvc;
 
     private Matiere matiere;
-
+    private UniteEnseignement uniteEnseignement;
     private Matiere insertedMatiere;
 
     /**
@@ -78,8 +80,18 @@ class MatiereResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Matiere createEntity() {
-        return new Matiere().nom(DEFAULT_NOM).heures(DEFAULT_HEURES).credits(DEFAULT_CREDITS).moduleId(DEFAULT_MODULE_ID);
+    public static Matiere createEntity(EntityManager em) {
+        UniteEnseignement uniteEnseignement = new UniteEnseignement()
+            .nom("UE Test")
+            .code("UE001");
+        em.persist(uniteEnseignement);
+        em.flush();
+
+        return new Matiere()
+            .nom(DEFAULT_NOM)
+            .heures(DEFAULT_HEURES)
+            .credits(DEFAULT_CREDITS)
+            .uniteEnseignement(uniteEnseignement);
     }
 
     /**
@@ -88,13 +100,32 @@ class MatiereResourceIT {
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Matiere createUpdatedEntity() {
-        return new Matiere().nom(UPDATED_NOM).heures(UPDATED_HEURES).credits(UPDATED_CREDITS).moduleId(UPDATED_MODULE_ID);
+    public static Matiere createUpdatedEntity(EntityManager em) {
+        UniteEnseignement uniteEnseignement = new UniteEnseignement()
+            .nom("UE Test Updated")
+            .code("UE002");
+        em.persist(uniteEnseignement);
+        em.flush();
+
+        return new Matiere()
+            .nom(UPDATED_NOM)
+            .heures(UPDATED_HEURES)
+            .credits(UPDATED_CREDITS)
+            .uniteEnseignement(uniteEnseignement);
     }
 
     @BeforeEach
     void initTest() {
-        matiere = createEntity();
+        uniteEnseignement = new UniteEnseignement()
+            .nom("UE Test")
+            .code("UE001");
+        uniteEnseignementRepository.saveAndFlush(uniteEnseignement);
+
+        matiere = new Matiere()
+            .nom(DEFAULT_NOM)
+            .heures(DEFAULT_HEURES)
+            .credits(DEFAULT_CREDITS)
+            .uniteEnseignement(uniteEnseignement);
     }
 
     @AfterEach
@@ -102,6 +133,10 @@ class MatiereResourceIT {
         if (insertedMatiere != null) {
             matiereRepository.delete(insertedMatiere);
             insertedMatiere = null;
+        }
+        if (uniteEnseignement != null) {
+            uniteEnseignementRepository.delete(uniteEnseignement);
+            uniteEnseignement = null;
         }
     }
 
@@ -127,6 +162,7 @@ class MatiereResourceIT {
         assertIncrementedRepositoryCount(databaseSizeBeforeCreate);
         var returnedMatiere = matiereMapper.toEntity(returnedMatiereDTO);
         assertMatiereUpdatableFieldsEquals(returnedMatiere, getPersistedMatiere(returnedMatiere));
+        assertThat(returnedMatiere.getUniteEnseignement().getId()).isEqualTo(uniteEnseignement.getId());
 
         insertedMatiere = returnedMatiere;
     }
@@ -202,10 +238,10 @@ class MatiereResourceIT {
 
     @Test
     @Transactional
-    void checkModuleIdIsRequired() throws Exception {
+    void checkUniteEnseignementIsRequired() throws Exception {
         long databaseSizeBeforeTest = getRepositoryCount();
         // set the field null
-        matiere.setModuleId(null);
+        matiere.setUniteEnseignement(null);
 
         // Create the Matiere, which fails.
         MatiereDTO matiereDTO = matiereMapper.toDto(matiere);
@@ -232,7 +268,7 @@ class MatiereResourceIT {
             .andExpect(jsonPath("$.[*].nom").value(hasItem(DEFAULT_NOM)))
             .andExpect(jsonPath("$.[*].heures").value(hasItem(DEFAULT_HEURES)))
             .andExpect(jsonPath("$.[*].credits").value(hasItem(DEFAULT_CREDITS)))
-            .andExpect(jsonPath("$.[*].moduleId").value(hasItem(DEFAULT_MODULE_ID.intValue())));
+            .andExpect(jsonPath("$.[*].uniteEnseignement.id").value(hasItem(uniteEnseignement.getId().intValue())));
     }
 
     @Test
@@ -250,7 +286,7 @@ class MatiereResourceIT {
             .andExpect(jsonPath("$.nom").value(DEFAULT_NOM))
             .andExpect(jsonPath("$.heures").value(DEFAULT_HEURES))
             .andExpect(jsonPath("$.credits").value(DEFAULT_CREDITS))
-            .andExpect(jsonPath("$.moduleId").value(DEFAULT_MODULE_ID.intValue()));
+            .andExpect(jsonPath("$.uniteEnseignement.id").value(uniteEnseignement.getId().intValue()));
     }
 
     @Test
@@ -272,7 +308,18 @@ class MatiereResourceIT {
         Matiere updatedMatiere = matiereRepository.findById(matiere.getId()).orElseThrow();
         // Disconnect from session so that the updates on updatedMatiere are not directly saved in db
         em.detach(updatedMatiere);
-        updatedMatiere.nom(UPDATED_NOM).heures(UPDATED_HEURES).credits(UPDATED_CREDITS).moduleId(UPDATED_MODULE_ID);
+
+        UniteEnseignement updatedUniteEnseignement = new UniteEnseignement()
+            .nom("UE Updated")
+            .code("UE002");
+        uniteEnseignementRepository.saveAndFlush(updatedUniteEnseignement);
+
+        updatedMatiere
+            .nom(UPDATED_NOM)
+            .heures(UPDATED_HEURES)
+            .credits(UPDATED_CREDITS)
+            .uniteEnseignement(updatedUniteEnseignement);
+
         MatiereDTO matiereDTO = matiereMapper.toDto(updatedMatiere);
 
         restMatiereMockMvc
@@ -286,7 +333,11 @@ class MatiereResourceIT {
 
         // Validate the Matiere in the database
         assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertPersistedMatiereToMatchAllProperties(updatedMatiere);
+        Matiere persistedMatiere = matiereRepository.findById(updatedMatiere.getId()).get();
+        assertThat(persistedMatiere.getNom()).isEqualTo(UPDATED_NOM);
+        assertThat(persistedMatiere.getHeures()).isEqualTo(UPDATED_HEURES);
+        assertThat(persistedMatiere.getCredits()).isEqualTo(UPDATED_CREDITS);
+        assertThat(persistedMatiere.getUniteEnseignement().getId()).isEqualTo(updatedUniteEnseignement.getId());
     }
 
     @Test
@@ -365,7 +416,7 @@ class MatiereResourceIT {
         Matiere partialUpdatedMatiere = new Matiere();
         partialUpdatedMatiere.setId(matiere.getId());
 
-        partialUpdatedMatiere.heures(UPDATED_HEURES).credits(UPDATED_CREDITS).moduleId(UPDATED_MODULE_ID);
+        partialUpdatedMatiere.heures(UPDATED_HEURES).credits(UPDATED_CREDITS);
 
         restMatiereMockMvc
             .perform(
@@ -377,9 +428,12 @@ class MatiereResourceIT {
             .andExpect(status().isOk());
 
         // Validate the Matiere in the database
-
         assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertMatiereUpdatableFieldsEquals(createUpdateProxyForBean(partialUpdatedMatiere, matiere), getPersistedMatiere(matiere));
+        Matiere persistedMatiere = matiereRepository.findById(matiere.getId()).get();
+        assertThat(persistedMatiere.getNom()).isEqualTo(DEFAULT_NOM);
+        assertThat(persistedMatiere.getHeures()).isEqualTo(UPDATED_HEURES);
+        assertThat(persistedMatiere.getCredits()).isEqualTo(UPDATED_CREDITS);
+        assertThat(persistedMatiere.getUniteEnseignement().getId()).isEqualTo(uniteEnseignement.getId());
     }
 
     @Test
@@ -394,7 +448,16 @@ class MatiereResourceIT {
         Matiere partialUpdatedMatiere = new Matiere();
         partialUpdatedMatiere.setId(matiere.getId());
 
-        partialUpdatedMatiere.nom(UPDATED_NOM).heures(UPDATED_HEURES).credits(UPDATED_CREDITS).moduleId(UPDATED_MODULE_ID);
+        UniteEnseignement newUniteEnseignement = new UniteEnseignement()
+            .nom("UE New")
+            .code("UE003");
+        uniteEnseignementRepository.saveAndFlush(newUniteEnseignement);
+
+        partialUpdatedMatiere
+            .nom(UPDATED_NOM)
+            .heures(UPDATED_HEURES)
+            .credits(UPDATED_CREDITS)
+            .uniteEnseignement(newUniteEnseignement);
 
         restMatiereMockMvc
             .perform(
@@ -406,9 +469,12 @@ class MatiereResourceIT {
             .andExpect(status().isOk());
 
         // Validate the Matiere in the database
-
         assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertMatiereUpdatableFieldsEquals(partialUpdatedMatiere, getPersistedMatiere(partialUpdatedMatiere));
+        Matiere persistedMatiere = matiereRepository.findById(matiere.getId()).get();
+        assertThat(persistedMatiere.getNom()).isEqualTo(UPDATED_NOM);
+        assertThat(persistedMatiere.getHeures()).isEqualTo(UPDATED_HEURES);
+        assertThat(persistedMatiere.getCredits()).isEqualTo(UPDATED_CREDITS);
+        assertThat(persistedMatiere.getUniteEnseignement().getId()).isEqualTo(newUniteEnseignement.getId());
     }
 
     @Test

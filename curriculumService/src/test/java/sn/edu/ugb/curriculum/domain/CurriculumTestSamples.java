@@ -9,18 +9,38 @@ public class CurriculumTestSamples {
     private static final AtomicLong longCount = new AtomicLong(random.nextInt() + (2 * Integer.MAX_VALUE));
 
     public static Curriculum getCurriculumSample1() {
-        return new Curriculum().id(1L).filiereId(1L).moduleId(1L).semestreId(1L);
+        Filiere filiere = new Filiere().id(1L);
+        UniteEnseignement uniteEnseignement = new UniteEnseignement().id(1L);
+        Semestre semestre = new Semestre().id(1L);
+
+        return new Curriculum()
+            .id(1L)
+            .filiere(filiere)
+            .uniteEnseignement(uniteEnseignement)
+            .semestre(semestre);
     }
 
     public static Curriculum getCurriculumSample2() {
-        return new Curriculum().id(2L).filiereId(2L).moduleId(2L).semestreId(2L);
+        Filiere filiere = new Filiere().id(2L);
+        UniteEnseignement uniteEnseignement = new UniteEnseignement().id(2L);
+        Semestre semestre = new Semestre().id(2L);
+
+        return new Curriculum()
+            .id(2L)
+            .filiere(filiere)
+            .uniteEnseignement(uniteEnseignement)
+            .semestre(semestre);
     }
 
     public static Curriculum getCurriculumRandomSampleGenerator() {
+        Filiere filiere = new Filiere().id(longCount.incrementAndGet());
+        UniteEnseignement uniteEnseignement = new UniteEnseignement().id(longCount.incrementAndGet());
+        Semestre semestre = new Semestre().id(longCount.incrementAndGet());
+
         return new Curriculum()
             .id(longCount.incrementAndGet())
-            .filiereId(longCount.incrementAndGet())
-            .moduleId(longCount.incrementAndGet())
-            .semestreId(longCount.incrementAndGet());
+            .filiere(filiere)
+            .uniteEnseignement(uniteEnseignement)
+            .semestre(semestre);
     }
 }

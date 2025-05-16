@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +21,9 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import sn.edu.ugb.curriculum.IntegrationTest;
+import sn.edu.ugb.curriculum.domain.Filiere;
 import sn.edu.ugb.curriculum.domain.UniteEnseignement;
+import sn.edu.ugb.curriculum.repository.FiliereRepository;
 import sn.edu.ugb.curriculum.repository.UniteEnseignementRepository;
 import sn.edu.ugb.curriculum.service.dto.UniteEnseignementDTO;
 import sn.edu.ugb.curriculum.service.mapper.UniteEnseignementMapper;
@@ -41,9 +42,6 @@ class UniteEnseignementResourceIT {
     private static final String DEFAULT_CODE = "AAAAAAAAAA";
     private static final String UPDATED_CODE = "BBBBBBBBBB";
 
-    private static final Long DEFAULT_FILIERE_ID = 1L;
-    private static final Long UPDATED_FILIERE_ID = 2L;
-
     private static final String ENTITY_API_URL = "/api/unite-enseignements";
     private static final String ENTITY_API_URL_ID = ENTITY_API_URL + "/{id}";
 
@@ -57,6 +55,9 @@ class UniteEnseignementResourceIT {
     private UniteEnseignementRepository uniteEnseignementRepository;
 
     @Autowired
+    private FiliereRepository filiereRepository;
+
+    @Autowired
     private UniteEnseignementMapper uniteEnseignementMapper;
 
     @Autowired
@@ -66,165 +67,153 @@ class UniteEnseignementResourceIT {
     private MockMvc restUniteEnseignementMockMvc;
 
     private UniteEnseignement uniteEnseignement;
-
-    private UniteEnseignement insertedUniteEnseignement;
+    private Filiere filiere;
 
     /**
      * Create an entity for this test.
-     *
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity.
      */
-    public static UniteEnseignement createEntity() {
-        return new UniteEnseignement().nom(DEFAULT_NOM).code(DEFAULT_CODE).filiereId(DEFAULT_FILIERE_ID);
+    public static UniteEnseignement createEntity(EntityManager em) {
+        Filiere filiere = new Filiere()
+            .nom("Filiere Test")
+            .code("FIL123");
+        em.persist(filiere);
+        em.flush();
+
+        return new UniteEnseignement()
+            .nom(DEFAULT_NOM)
+            .code(DEFAULT_CODE)
+            .filiere(filiere);
     }
 
     /**
      * Create an updated entity for this test.
-     *
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity.
      */
-    public static UniteEnseignement createUpdatedEntity() {
-        return new UniteEnseignement().nom(UPDATED_NOM).code(UPDATED_CODE).filiereId(UPDATED_FILIERE_ID);
+    public static UniteEnseignement createUpdatedEntity(EntityManager em) {
+        Filiere filiere = new Filiere()
+            .nom("Filiere Test Updated")
+            .code("FIL456");
+        em.persist(filiere);
+        em.flush();
+
+        return new UniteEnseignement()
+            .nom(UPDATED_NOM)
+            .code(UPDATED_CODE)
+            .filiere(filiere);
     }
 
     @BeforeEach
-    void initTest() {
-        uniteEnseignement = createEntity();
-    }
+    public void initTest() {
+        filiere = new Filiere()
+            .nom("Filiere Test")
+            .code("FIL123");
+        filiereRepository.saveAndFlush(filiere);
 
-    @AfterEach
-    void cleanup() {
-        if (insertedUniteEnseignement != null) {
-            uniteEnseignementRepository.delete(insertedUniteEnseignement);
-            insertedUniteEnseignement = null;
-        }
+        uniteEnseignement = new UniteEnseignement()
+            .nom(DEFAULT_NOM)
+            .code(DEFAULT_CODE)
+            .filiere(filiere);
     }
 
     @Test
     @Transactional
     void createUniteEnseignement() throws Exception {
-        long databaseSizeBeforeCreate = getRepositoryCount();
+        long databaseSizeBeforeCreate = uniteEnseignementRepository.count();
+
         // Create the UniteEnseignement
         UniteEnseignementDTO uniteEnseignementDTO = uniteEnseignementMapper.toDto(uniteEnseignement);
-        var returnedUniteEnseignementDTO = om.readValue(
-            restUniteEnseignementMockMvc
-                .perform(
-                    post(ENTITY_API_URL)
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsBytes(uniteEnseignementDTO))
-                )
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString(),
-            UniteEnseignementDTO.class
-        );
 
-        // Validate the UniteEnseignement in the database
-        assertIncrementedRepositoryCount(databaseSizeBeforeCreate);
-        var returnedUniteEnseignement = uniteEnseignementMapper.toEntity(returnedUniteEnseignementDTO);
-        assertUniteEnseignementUpdatableFieldsEquals(returnedUniteEnseignement, getPersistedUniteEnseignement(returnedUniteEnseignement));
+        restUniteEnseignementMockMvc
+            .perform(post(ENTITY_API_URL)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(om.writeValueAsBytes(uniteEnseignementDTO)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").exists())
+            .andExpect(jsonPath("$.nom").value(DEFAULT_NOM))
+            .andExpect(jsonPath("$.code").value(DEFAULT_CODE))
+            .andExpect(jsonPath("$.filiere.id").value(filiere.getId().intValue()));
 
-        insertedUniteEnseignement = returnedUniteEnseignement;
+        // Validate the database
+        assertThat(uniteEnseignementRepository.count()).isEqualTo(databaseSizeBeforeCreate + 1);
     }
 
     @Test
     @Transactional
     void createUniteEnseignementWithExistingId() throws Exception {
-        // Create the UniteEnseignement with an existing ID
         uniteEnseignement.setId(1L);
         UniteEnseignementDTO uniteEnseignementDTO = uniteEnseignementMapper.toDto(uniteEnseignement);
 
-        long databaseSizeBeforeCreate = getRepositoryCount();
+        long databaseSizeBeforeCreate = uniteEnseignementRepository.count();
 
-        // An entity with an existing ID cannot be created, so this API call must fail
         restUniteEnseignementMockMvc
-            .perform(
-                post(ENTITY_API_URL)
-                    .with(csrf())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(uniteEnseignementDTO))
-            )
+            .perform(post(ENTITY_API_URL)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(om.writeValueAsBytes(uniteEnseignementDTO)))
             .andExpect(status().isBadRequest());
 
-        // Validate the UniteEnseignement in the database
-        assertSameRepositoryCount(databaseSizeBeforeCreate);
+        assertThat(uniteEnseignementRepository.count()).isEqualTo(databaseSizeBeforeCreate);
     }
 
     @Test
     @Transactional
     void checkNomIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
+        long databaseSizeBeforeTest = uniteEnseignementRepository.count();
         uniteEnseignement.setNom(null);
 
-        // Create the UniteEnseignement, which fails.
         UniteEnseignementDTO uniteEnseignementDTO = uniteEnseignementMapper.toDto(uniteEnseignement);
 
         restUniteEnseignementMockMvc
-            .perform(
-                post(ENTITY_API_URL)
-                    .with(csrf())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(uniteEnseignementDTO))
-            )
+            .perform(post(ENTITY_API_URL)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(om.writeValueAsBytes(uniteEnseignementDTO)))
             .andExpect(status().isBadRequest());
 
-        assertSameRepositoryCount(databaseSizeBeforeTest);
+        assertThat(uniteEnseignementRepository.count()).isEqualTo(databaseSizeBeforeTest);
     }
 
     @Test
     @Transactional
     void checkCodeIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
+        long databaseSizeBeforeTest = uniteEnseignementRepository.count();
         uniteEnseignement.setCode(null);
 
-        // Create the UniteEnseignement, which fails.
         UniteEnseignementDTO uniteEnseignementDTO = uniteEnseignementMapper.toDto(uniteEnseignement);
 
         restUniteEnseignementMockMvc
-            .perform(
-                post(ENTITY_API_URL)
-                    .with(csrf())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(uniteEnseignementDTO))
-            )
+            .perform(post(ENTITY_API_URL)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(om.writeValueAsBytes(uniteEnseignementDTO)))
             .andExpect(status().isBadRequest());
 
-        assertSameRepositoryCount(databaseSizeBeforeTest);
+        assertThat(uniteEnseignementRepository.count()).isEqualTo(databaseSizeBeforeTest);
     }
 
     @Test
     @Transactional
-    void checkFiliereIdIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
-        uniteEnseignement.setFiliereId(null);
+    void checkFiliereIsRequired() throws Exception {
+        long databaseSizeBeforeTest = uniteEnseignementRepository.count();
+        uniteEnseignement.setFiliere(null);
 
-        // Create the UniteEnseignement, which fails.
         UniteEnseignementDTO uniteEnseignementDTO = uniteEnseignementMapper.toDto(uniteEnseignement);
 
         restUniteEnseignementMockMvc
-            .perform(
-                post(ENTITY_API_URL)
-                    .with(csrf())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(uniteEnseignementDTO))
-            )
+            .perform(post(ENTITY_API_URL)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(om.writeValueAsBytes(uniteEnseignementDTO)))
             .andExpect(status().isBadRequest());
 
-        assertSameRepositoryCount(databaseSizeBeforeTest);
+        assertThat(uniteEnseignementRepository.count()).isEqualTo(databaseSizeBeforeTest);
     }
 
     @Test
     @Transactional
     void getAllUniteEnseignements() throws Exception {
         // Initialize the database
-        insertedUniteEnseignement = uniteEnseignementRepository.saveAndFlush(uniteEnseignement);
+        uniteEnseignementRepository.saveAndFlush(uniteEnseignement);
 
         // Get all the uniteEnseignementList
         restUniteEnseignementMockMvc
@@ -234,14 +223,14 @@ class UniteEnseignementResourceIT {
             .andExpect(jsonPath("$.[*].id").value(hasItem(uniteEnseignement.getId().intValue())))
             .andExpect(jsonPath("$.[*].nom").value(hasItem(DEFAULT_NOM)))
             .andExpect(jsonPath("$.[*].code").value(hasItem(DEFAULT_CODE)))
-            .andExpect(jsonPath("$.[*].filiereId").value(hasItem(DEFAULT_FILIERE_ID.intValue())));
+            .andExpect(jsonPath("$.[*].filiere.id").value(hasItem(filiere.getId().intValue())));
     }
 
     @Test
     @Transactional
     void getUniteEnseignement() throws Exception {
         // Initialize the database
-        insertedUniteEnseignement = uniteEnseignementRepository.saveAndFlush(uniteEnseignement);
+        uniteEnseignementRepository.saveAndFlush(uniteEnseignement);
 
         // Get the uniteEnseignement
         restUniteEnseignementMockMvc
@@ -251,118 +240,117 @@ class UniteEnseignementResourceIT {
             .andExpect(jsonPath("$.id").value(uniteEnseignement.getId().intValue()))
             .andExpect(jsonPath("$.nom").value(DEFAULT_NOM))
             .andExpect(jsonPath("$.code").value(DEFAULT_CODE))
-            .andExpect(jsonPath("$.filiereId").value(DEFAULT_FILIERE_ID.intValue()));
+            .andExpect(jsonPath("$.filiere.id").value(filiere.getId().intValue()));
     }
 
     @Test
     @Transactional
     void getNonExistingUniteEnseignement() throws Exception {
-        // Get the uniteEnseignement
-        restUniteEnseignementMockMvc.perform(get(ENTITY_API_URL_ID, Long.MAX_VALUE)).andExpect(status().isNotFound());
+        restUniteEnseignementMockMvc
+            .perform(get(ENTITY_API_URL_ID, Long.MAX_VALUE))
+            .andExpect(status().isNotFound());
     }
 
     @Test
     @Transactional
     void putExistingUniteEnseignement() throws Exception {
         // Initialize the database
-        insertedUniteEnseignement = uniteEnseignementRepository.saveAndFlush(uniteEnseignement);
+        uniteEnseignementRepository.saveAndFlush(uniteEnseignement);
 
-        long databaseSizeBeforeUpdate = getRepositoryCount();
+        long databaseSizeBeforeUpdate = uniteEnseignementRepository.count();
 
         // Update the uniteEnseignement
-        UniteEnseignement updatedUniteEnseignement = uniteEnseignementRepository.findById(uniteEnseignement.getId()).orElseThrow();
-        // Disconnect from session so that the updates on updatedUniteEnseignement are not directly saved in db
+        UniteEnseignement updatedUniteEnseignement = uniteEnseignementRepository.findById(uniteEnseignement.getId()).get();
         em.detach(updatedUniteEnseignement);
-        updatedUniteEnseignement.nom(UPDATED_NOM).code(UPDATED_CODE).filiereId(UPDATED_FILIERE_ID);
+
+        Filiere updatedFiliere = new Filiere()
+            .nom("Updated Filiere")
+            .code("FIL456");
+        filiereRepository.saveAndFlush(updatedFiliere);
+
+        updatedUniteEnseignement
+            .nom(UPDATED_NOM)
+            .code(UPDATED_CODE)
+            .filiere(updatedFiliere);
+
         UniteEnseignementDTO uniteEnseignementDTO = uniteEnseignementMapper.toDto(updatedUniteEnseignement);
 
         restUniteEnseignementMockMvc
-            .perform(
-                put(ENTITY_API_URL_ID, uniteEnseignementDTO.getId())
-                    .with(csrf())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(uniteEnseignementDTO))
-            )
+            .perform(put(ENTITY_API_URL_ID, uniteEnseignementDTO.getId())
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(om.writeValueAsBytes(uniteEnseignementDTO)))
             .andExpect(status().isOk());
 
         // Validate the UniteEnseignement in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertPersistedUniteEnseignementToMatchAllProperties(updatedUniteEnseignement);
+        assertThat(uniteEnseignementRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
+        UniteEnseignement persistedUniteEnseignement = uniteEnseignementRepository.findById(uniteEnseignement.getId()).get();
+        assertThat(persistedUniteEnseignement.getNom()).isEqualTo(UPDATED_NOM);
+        assertThat(persistedUniteEnseignement.getCode()).isEqualTo(UPDATED_CODE);
+        assertThat(persistedUniteEnseignement.getFiliere().getId()).isEqualTo(updatedFiliere.getId());
     }
 
     @Test
     @Transactional
     void putNonExistingUniteEnseignement() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
+        long databaseSizeBeforeUpdate = uniteEnseignementRepository.count();
         uniteEnseignement.setId(longCount.incrementAndGet());
 
-        // Create the UniteEnseignement
         UniteEnseignementDTO uniteEnseignementDTO = uniteEnseignementMapper.toDto(uniteEnseignement);
 
-        // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restUniteEnseignementMockMvc
-            .perform(
-                put(ENTITY_API_URL_ID, uniteEnseignementDTO.getId())
-                    .with(csrf())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(uniteEnseignementDTO))
-            )
+            .perform(put(ENTITY_API_URL_ID, uniteEnseignementDTO.getId())
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(om.writeValueAsBytes(uniteEnseignementDTO)))
             .andExpect(status().isBadRequest());
 
-        // Validate the UniteEnseignement in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        assertThat(uniteEnseignementRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
     void putWithIdMismatchUniteEnseignement() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
+        long databaseSizeBeforeUpdate = uniteEnseignementRepository.count();
         uniteEnseignement.setId(longCount.incrementAndGet());
 
-        // Create the UniteEnseignement
         UniteEnseignementDTO uniteEnseignementDTO = uniteEnseignementMapper.toDto(uniteEnseignement);
 
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         restUniteEnseignementMockMvc
-            .perform(
-                put(ENTITY_API_URL_ID, longCount.incrementAndGet())
-                    .with(csrf())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(uniteEnseignementDTO))
-            )
+            .perform(put(ENTITY_API_URL_ID, longCount.incrementAndGet())
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(om.writeValueAsBytes(uniteEnseignementDTO)))
             .andExpect(status().isBadRequest());
 
-        // Validate the UniteEnseignement in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        assertThat(uniteEnseignementRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
     void putWithMissingIdPathParamUniteEnseignement() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
+        long databaseSizeBeforeUpdate = uniteEnseignementRepository.count();
         uniteEnseignement.setId(longCount.incrementAndGet());
 
-        // Create the UniteEnseignement
         UniteEnseignementDTO uniteEnseignementDTO = uniteEnseignementMapper.toDto(uniteEnseignement);
 
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         restUniteEnseignementMockMvc
-            .perform(
-                put(ENTITY_API_URL).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(uniteEnseignementDTO))
-            )
+            .perform(put(ENTITY_API_URL)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(om.writeValueAsBytes(uniteEnseignementDTO)))
             .andExpect(status().isMethodNotAllowed());
 
-        // Validate the UniteEnseignement in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        assertThat(uniteEnseignementRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
     void partialUpdateUniteEnseignementWithPatch() throws Exception {
         // Initialize the database
-        insertedUniteEnseignement = uniteEnseignementRepository.saveAndFlush(uniteEnseignement);
+        uniteEnseignementRepository.saveAndFlush(uniteEnseignement);
 
-        long databaseSizeBeforeUpdate = getRepositoryCount();
+        long databaseSizeBeforeUpdate = uniteEnseignementRepository.count();
 
         // Update the uniteEnseignement using partial update
         UniteEnseignement partialUpdatedUniteEnseignement = new UniteEnseignement();
@@ -371,169 +359,127 @@ class UniteEnseignementResourceIT {
         partialUpdatedUniteEnseignement.nom(UPDATED_NOM);
 
         restUniteEnseignementMockMvc
-            .perform(
-                patch(ENTITY_API_URL_ID, partialUpdatedUniteEnseignement.getId())
-                    .with(csrf())
-                    .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(partialUpdatedUniteEnseignement))
-            )
+            .perform(patch(ENTITY_API_URL_ID, partialUpdatedUniteEnseignement.getId())
+                .with(csrf())
+                .contentType("application/merge-patch+json")
+                .content(om.writeValueAsBytes(partialUpdatedUniteEnseignement)))
             .andExpect(status().isOk());
 
-        // Validate the UniteEnseignement in the database
-
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertUniteEnseignementUpdatableFieldsEquals(
-            createUpdateProxyForBean(partialUpdatedUniteEnseignement, uniteEnseignement),
-            getPersistedUniteEnseignement(uniteEnseignement)
-        );
+        // Validate the database
+        assertThat(uniteEnseignementRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
+        UniteEnseignement updatedUniteEnseignement = uniteEnseignementRepository.findById(uniteEnseignement.getId()).get();
+        assertThat(updatedUniteEnseignement.getNom()).isEqualTo(UPDATED_NOM);
+        assertThat(updatedUniteEnseignement.getCode()).isEqualTo(DEFAULT_CODE);
+        assertThat(updatedUniteEnseignement.getFiliere().getId()).isEqualTo(filiere.getId());
     }
 
     @Test
     @Transactional
     void fullUpdateUniteEnseignementWithPatch() throws Exception {
         // Initialize the database
-        insertedUniteEnseignement = uniteEnseignementRepository.saveAndFlush(uniteEnseignement);
+        uniteEnseignementRepository.saveAndFlush(uniteEnseignement);
 
-        long databaseSizeBeforeUpdate = getRepositoryCount();
+        long databaseSizeBeforeUpdate = uniteEnseignementRepository.count();
 
         // Update the uniteEnseignement using partial update
         UniteEnseignement partialUpdatedUniteEnseignement = new UniteEnseignement();
         partialUpdatedUniteEnseignement.setId(uniteEnseignement.getId());
 
-        partialUpdatedUniteEnseignement.nom(UPDATED_NOM).code(UPDATED_CODE).filiereId(UPDATED_FILIERE_ID);
+        Filiere updatedFiliere = new Filiere()
+            .nom("Updated Filiere")
+            .code("FIL456");
+        filiereRepository.saveAndFlush(updatedFiliere);
+
+        partialUpdatedUniteEnseignement
+            .nom(UPDATED_NOM)
+            .code(UPDATED_CODE)
+            .filiere(updatedFiliere);
 
         restUniteEnseignementMockMvc
-            .perform(
-                patch(ENTITY_API_URL_ID, partialUpdatedUniteEnseignement.getId())
-                    .with(csrf())
-                    .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(partialUpdatedUniteEnseignement))
-            )
+            .perform(patch(ENTITY_API_URL_ID, partialUpdatedUniteEnseignement.getId())
+                .with(csrf())
+                .contentType("application/merge-patch+json")
+                .content(om.writeValueAsBytes(partialUpdatedUniteEnseignement)))
             .andExpect(status().isOk());
 
-        // Validate the UniteEnseignement in the database
-
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertUniteEnseignementUpdatableFieldsEquals(
-            partialUpdatedUniteEnseignement,
-            getPersistedUniteEnseignement(partialUpdatedUniteEnseignement)
-        );
+        // Validate the database
+        assertThat(uniteEnseignementRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
+        UniteEnseignement updatedUniteEnseignement = uniteEnseignementRepository.findById(uniteEnseignement.getId()).get();
+        assertThat(updatedUniteEnseignement.getNom()).isEqualTo(UPDATED_NOM);
+        assertThat(updatedUniteEnseignement.getCode()).isEqualTo(UPDATED_CODE);
+        assertThat(updatedUniteEnseignement.getFiliere().getId()).isEqualTo(updatedFiliere.getId());
     }
 
     @Test
     @Transactional
     void patchNonExistingUniteEnseignement() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
+        long databaseSizeBeforeUpdate = uniteEnseignementRepository.count();
         uniteEnseignement.setId(longCount.incrementAndGet());
 
-        // Create the UniteEnseignement
         UniteEnseignementDTO uniteEnseignementDTO = uniteEnseignementMapper.toDto(uniteEnseignement);
 
-        // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restUniteEnseignementMockMvc
-            .perform(
-                patch(ENTITY_API_URL_ID, uniteEnseignementDTO.getId())
-                    .with(csrf())
-                    .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(uniteEnseignementDTO))
-            )
+            .perform(patch(ENTITY_API_URL_ID, uniteEnseignementDTO.getId())
+                .with(csrf())
+                .contentType("application/merge-patch+json")
+                .content(om.writeValueAsBytes(uniteEnseignementDTO)))
             .andExpect(status().isBadRequest());
 
-        // Validate the UniteEnseignement in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        assertThat(uniteEnseignementRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
     void patchWithIdMismatchUniteEnseignement() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
+        long databaseSizeBeforeUpdate = uniteEnseignementRepository.count();
         uniteEnseignement.setId(longCount.incrementAndGet());
 
-        // Create the UniteEnseignement
         UniteEnseignementDTO uniteEnseignementDTO = uniteEnseignementMapper.toDto(uniteEnseignement);
 
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         restUniteEnseignementMockMvc
-            .perform(
-                patch(ENTITY_API_URL_ID, longCount.incrementAndGet())
-                    .with(csrf())
-                    .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(uniteEnseignementDTO))
-            )
+            .perform(patch(ENTITY_API_URL_ID, longCount.incrementAndGet())
+                .with(csrf())
+                .contentType("application/merge-patch+json")
+                .content(om.writeValueAsBytes(uniteEnseignementDTO)))
             .andExpect(status().isBadRequest());
 
-        // Validate the UniteEnseignement in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        assertThat(uniteEnseignementRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
     void patchWithMissingIdPathParamUniteEnseignement() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
+        long databaseSizeBeforeUpdate = uniteEnseignementRepository.count();
         uniteEnseignement.setId(longCount.incrementAndGet());
 
-        // Create the UniteEnseignement
         UniteEnseignementDTO uniteEnseignementDTO = uniteEnseignementMapper.toDto(uniteEnseignement);
 
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         restUniteEnseignementMockMvc
-            .perform(
-                patch(ENTITY_API_URL)
-                    .with(csrf())
-                    .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(uniteEnseignementDTO))
-            )
+            .perform(patch(ENTITY_API_URL)
+                .with(csrf())
+                .contentType("application/merge-patch+json")
+                .content(om.writeValueAsBytes(uniteEnseignementDTO)))
             .andExpect(status().isMethodNotAllowed());
 
-        // Validate the UniteEnseignement in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        assertThat(uniteEnseignementRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
     void deleteUniteEnseignement() throws Exception {
         // Initialize the database
-        insertedUniteEnseignement = uniteEnseignementRepository.saveAndFlush(uniteEnseignement);
+        uniteEnseignementRepository.saveAndFlush(uniteEnseignement);
 
-        long databaseSizeBeforeDelete = getRepositoryCount();
+        long databaseSizeBeforeDelete = uniteEnseignementRepository.count();
 
         // Delete the uniteEnseignement
         restUniteEnseignementMockMvc
-            .perform(delete(ENTITY_API_URL_ID, uniteEnseignement.getId()).with(csrf()).accept(MediaType.APPLICATION_JSON))
+            .perform(delete(ENTITY_API_URL_ID, uniteEnseignement.getId())
+                .with(csrf())
+                .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isNoContent());
 
         // Validate the database contains one less item
-        assertDecrementedRepositoryCount(databaseSizeBeforeDelete);
-    }
-
-    protected long getRepositoryCount() {
-        return uniteEnseignementRepository.count();
-    }
-
-    protected void assertIncrementedRepositoryCount(long countBefore) {
-        assertThat(countBefore + 1).isEqualTo(getRepositoryCount());
-    }
-
-    protected void assertDecrementedRepositoryCount(long countBefore) {
-        assertThat(countBefore - 1).isEqualTo(getRepositoryCount());
-    }
-
-    protected void assertSameRepositoryCount(long countBefore) {
-        assertThat(countBefore).isEqualTo(getRepositoryCount());
-    }
-
-    protected UniteEnseignement getPersistedUniteEnseignement(UniteEnseignement uniteEnseignement) {
-        return uniteEnseignementRepository.findById(uniteEnseignement.getId()).orElseThrow();
-    }
-
-    protected void assertPersistedUniteEnseignementToMatchAllProperties(UniteEnseignement expectedUniteEnseignement) {
-        assertUniteEnseignementAllPropertiesEquals(expectedUniteEnseignement, getPersistedUniteEnseignement(expectedUniteEnseignement));
-    }
-
-    protected void assertPersistedUniteEnseignementToMatchUpdatableProperties(UniteEnseignement expectedUniteEnseignement) {
-        assertUniteEnseignementAllUpdatablePropertiesEquals(
-            expectedUniteEnseignement,
-            getPersistedUniteEnseignement(expectedUniteEnseignement)
-        );
+        assertThat(uniteEnseignementRepository.count()).isEqualTo(databaseSizeBeforeDelete - 1);
     }
 }

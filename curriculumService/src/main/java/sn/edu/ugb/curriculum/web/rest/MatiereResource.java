@@ -1,5 +1,11 @@
 package sn.edu.ugb.curriculum.web.rest;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;
@@ -29,6 +35,7 @@ import tech.jhipster.web.util.ResponseUtil;
  */
 @RestController
 @RequestMapping("/api/matieres")
+@Tag(name = "Matière", description = "Gestion des matières (cours)")
 public class MatiereResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(MatiereResource.class);
@@ -54,6 +61,15 @@ public class MatiereResource {
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new matiereDTO, or with status {@code 400 (Bad Request)} if the matiere has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    @Operation(
+        summary = "Créer une nouvelle matière",
+        description = "Enregistre une nouvelle matière (cours) dans le système",
+        responses = {
+            @ApiResponse(responseCode = "201", description = "Matière créée avec succès", content = @Content(schema = @Schema(implementation = MatiereDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Requête invalide (ex: ID déjà existant)"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @PostMapping("")
     public ResponseEntity<MatiereDTO> createMatiere(@Valid @RequestBody MatiereDTO matiereDTO) throws URISyntaxException {
         LOG.debug("REST request to save Matiere : {}", matiereDTO);
@@ -76,9 +92,19 @@ public class MatiereResource {
      * or with status {@code 500 (Internal Server Error)} if the matiereDTO couldn't be updated.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    @Operation(
+        summary = "Mettre à jour une matière existante",
+        description = "Met à jour toutes les propriétés d'une matière existante",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Matière mise à jour avec succès", content = @Content(schema = @Schema(implementation = MatiereDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Requête invalide"),
+            @ApiResponse(responseCode = "404", description = "Matière non trouvée"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @PutMapping("/{id}")
     public ResponseEntity<MatiereDTO> updateMatiere(
-        @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "ID de la matière à mettre à jour", required = true) @PathVariable(value = "id", required = false) final Long id,
         @Valid @RequestBody MatiereDTO matiereDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to update Matiere : {}, {}", id, matiereDTO);
@@ -110,9 +136,19 @@ public class MatiereResource {
      * or with status {@code 500 (Internal Server Error)} if the matiereDTO couldn't be updated.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
+    @Operation(
+        summary = "Mise à jour partielle d'une matière",
+        description = "Met à jour uniquement les champs spécifiés d'une matière existante",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Matière partiellement mise à jour", content = @Content(schema = @Schema(implementation = MatiereDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Requête invalide"),
+            @ApiResponse(responseCode = "404", description = "Matière non trouvée"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
     public ResponseEntity<MatiereDTO> partialUpdateMatiere(
-        @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "ID de la matière à mettre à jour partiellement", required = true) @PathVariable(value = "id", required = false) final Long id,
         @NotNull @RequestBody MatiereDTO matiereDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to partial update Matiere partially : {}, {}", id, matiereDTO);
@@ -141,6 +177,14 @@ public class MatiereResource {
      * @param pageable the pagination information.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of matieres in body.
      */
+    @Operation(
+        summary = "Lister toutes les matières",
+        description = "Retourne une liste paginée de toutes les matières (cours)",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Liste des matières récupérée avec succès", content = @Content(schema = @Schema(implementation = Page.class))),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @GetMapping("")
     public ResponseEntity<List<MatiereDTO>> getAllMatieres(@org.springdoc.core.annotations.ParameterObject Pageable pageable) {
         LOG.debug("REST request to get a page of Matieres");
@@ -155,8 +199,19 @@ public class MatiereResource {
      * @param id the id of the matiereDTO to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the matiereDTO, or with status {@code 404 (Not Found)}.
      */
+    @Operation(
+        summary = "Obtenir une matière par son ID",
+        description = "Retourne les détails d'une matière spécifique",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Matière trouvée", content = @Content(schema = @Schema(implementation = MatiereDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Matière non trouvée"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @GetMapping("/{id}")
-    public ResponseEntity<MatiereDTO> getMatiere(@PathVariable("id") Long id) {
+    public ResponseEntity<MatiereDTO> getMatiere(
+        @Parameter(description = "ID de la matière à récupérer", required = true) @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to get Matiere : {}", id);
         Optional<MatiereDTO> matiereDTO = matiereService.findOne(id);
         return ResponseUtil.wrapOrNotFound(matiereDTO);
@@ -168,8 +223,19 @@ public class MatiereResource {
      * @param id the id of the matiereDTO to delete.
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
+    @Operation(
+        summary = "Supprimer une matière",
+        description = "Supprime une matière spécifique de la base de données",
+        responses = {
+            @ApiResponse(responseCode = "204", description = "Matière supprimée avec succès"),
+            @ApiResponse(responseCode = "404", description = "Matière non trouvée"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMatiere(@PathVariable("id") Long id) {
+    public ResponseEntity<Void> deleteMatiere(
+        @Parameter(description = "ID de la matière à supprimer", required = true) @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to delete Matiere : {}", id);
         matiereService.delete(id);
         return ResponseEntity.noContent()

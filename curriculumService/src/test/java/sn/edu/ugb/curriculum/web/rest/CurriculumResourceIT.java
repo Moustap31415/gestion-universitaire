@@ -10,6 +10,7 @@ import static sn.edu.ugb.curriculum.web.rest.TestUtil.createUpdateProxyForBean;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
+import java.time.LocalDate;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.AfterEach;
@@ -23,6 +24,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import sn.edu.ugb.curriculum.IntegrationTest;
 import sn.edu.ugb.curriculum.domain.Curriculum;
+import sn.edu.ugb.curriculum.domain.Filiere;
+import sn.edu.ugb.curriculum.domain.Semestre;
+import sn.edu.ugb.curriculum.domain.UniteEnseignement;
+import sn.edu.ugb.curriculum.domain.enumeration.NomSemestre;
 import sn.edu.ugb.curriculum.repository.CurriculumRepository;
 import sn.edu.ugb.curriculum.service.dto.CurriculumDTO;
 import sn.edu.ugb.curriculum.service.mapper.CurriculumMapper;
@@ -34,15 +39,6 @@ import sn.edu.ugb.curriculum.service.mapper.CurriculumMapper;
 @AutoConfigureMockMvc
 @WithMockUser
 class CurriculumResourceIT {
-
-    private static final Long DEFAULT_FILIERE_ID = 1L;
-    private static final Long UPDATED_FILIERE_ID = 2L;
-
-    private static final Long DEFAULT_MODULE_ID = 1L;
-    private static final Long UPDATED_MODULE_ID = 2L;
-
-    private static final Long DEFAULT_SEMESTRE_ID = 1L;
-    private static final Long UPDATED_SEMESTRE_ID = 2L;
 
     private static final String ENTITY_API_URL = "/api/curricula";
     private static final String ENTITY_API_URL_ID = ENTITY_API_URL + "/{id}";
@@ -66,32 +62,89 @@ class CurriculumResourceIT {
     private MockMvc restCurriculumMockMvc;
 
     private Curriculum curriculum;
+    private Filiere filiere;
+    private UniteEnseignement uniteEnseignement;
+    private Semestre semestre;
 
     private Curriculum insertedCurriculum;
 
     /**
      * Create an entity for this test.
-     *
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity.
      */
-    public static Curriculum createEntity() {
-        return new Curriculum().filiereId(DEFAULT_FILIERE_ID).moduleId(DEFAULT_MODULE_ID).semestreId(DEFAULT_SEMESTRE_ID);
+    public static Curriculum createEntity(EntityManager em) {
+        Filiere filiere = new Filiere()
+            .nom("Informatique")
+            .code("INFO");
+        em.persist(filiere);
+
+        UniteEnseignement uniteEnseignement = new UniteEnseignement()
+            .nom("Programmation")
+            .code("PROG")
+            .filiere(filiere);
+        em.persist(uniteEnseignement);
+
+        Semestre semestre = new Semestre()
+            .nom(NomSemestre.Semestre1)
+            .dateDebut(LocalDate.now())
+            .dateFin(LocalDate.now().plusMonths(6));
+        em.persist(semestre);
+
+        return new Curriculum()
+            .filiere(filiere)
+            .uniteEnseignement(uniteEnseignement)
+            .semestre(semestre);
     }
 
     /**
      * Create an updated entity for this test.
-     *
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity.
      */
-    public static Curriculum createUpdatedEntity() {
-        return new Curriculum().filiereId(UPDATED_FILIERE_ID).moduleId(UPDATED_MODULE_ID).semestreId(UPDATED_SEMESTRE_ID);
+    public static Curriculum createUpdatedEntity(EntityManager em) {
+        Filiere filiere = new Filiere()
+            .nom("Mathematiques")
+            .code("MATH");
+        em.persist(filiere);
+
+        UniteEnseignement uniteEnseignement = new UniteEnseignement()
+            .nom("Algebre")
+            .code("ALG")
+            .filiere(filiere);
+        em.persist(uniteEnseignement);
+
+        Semestre semestre = new Semestre()
+            .nom(NomSemestre.Semestre2)
+            .dateDebut(LocalDate.now().plusMonths(6))
+            .dateFin(LocalDate.now().plusMonths(12));
+        em.persist(semestre);
+
+        return new Curriculum()
+            .filiere(filiere)
+            .uniteEnseignement(uniteEnseignement)
+            .semestre(semestre);
     }
 
     @BeforeEach
     void initTest() {
-        curriculum = createEntity();
+        filiere = new Filiere()
+            .nom("Informatique")
+            .code("INFO");
+        em.persist(filiere);
+
+        uniteEnseignement = new UniteEnseignement()
+            .nom("Programmation")
+            .code("PROG")
+            .filiere(filiere);
+        em.persist(uniteEnseignement);
+
+        semestre = new Semestre()
+            .nom(NomSemestre.Semestre1)
+            .dateDebut(LocalDate.now())
+            .dateFin(LocalDate.now().plusMonths(6));
+        em.persist(semestre);
+
+        curriculum = new Curriculum()
+            .filiere(filiere)
+            .uniteEnseignement(uniteEnseignement)
+            .semestre(semestre);
     }
 
     @AfterEach
@@ -139,7 +192,12 @@ class CurriculumResourceIT {
 
         // An entity with an existing ID cannot be created, so this API call must fail
         restCurriculumMockMvc
-            .perform(post(ENTITY_API_URL).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(curriculumDTO)))
+            .perform(
+                post(ENTITY_API_URL)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(om.writeValueAsBytes(curriculumDTO))
+            )
             .andExpect(status().isBadRequest());
 
         // Validate the Curriculum in the database
@@ -148,16 +206,21 @@ class CurriculumResourceIT {
 
     @Test
     @Transactional
-    void checkFiliereIdIsRequired() throws Exception {
+    void checkFiliereIsRequired() throws Exception {
         long databaseSizeBeforeTest = getRepositoryCount();
         // set the field null
-        curriculum.setFiliereId(null);
+        curriculum.setFiliere(null);
 
         // Create the Curriculum, which fails.
         CurriculumDTO curriculumDTO = curriculumMapper.toDto(curriculum);
 
         restCurriculumMockMvc
-            .perform(post(ENTITY_API_URL).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(curriculumDTO)))
+            .perform(
+                post(ENTITY_API_URL)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(om.writeValueAsBytes(curriculumDTO))
+            )
             .andExpect(status().isBadRequest());
 
         assertSameRepositoryCount(databaseSizeBeforeTest);
@@ -165,16 +228,21 @@ class CurriculumResourceIT {
 
     @Test
     @Transactional
-    void checkModuleIdIsRequired() throws Exception {
+    void checkUniteEnseignementIsRequired() throws Exception {
         long databaseSizeBeforeTest = getRepositoryCount();
         // set the field null
-        curriculum.setModuleId(null);
+        curriculum.setUniteEnseignement(null);
 
         // Create the Curriculum, which fails.
         CurriculumDTO curriculumDTO = curriculumMapper.toDto(curriculum);
 
         restCurriculumMockMvc
-            .perform(post(ENTITY_API_URL).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(curriculumDTO)))
+            .perform(
+                post(ENTITY_API_URL)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(om.writeValueAsBytes(curriculumDTO))
+            )
             .andExpect(status().isBadRequest());
 
         assertSameRepositoryCount(databaseSizeBeforeTest);
@@ -182,16 +250,21 @@ class CurriculumResourceIT {
 
     @Test
     @Transactional
-    void checkSemestreIdIsRequired() throws Exception {
+    void checkSemestreIsRequired() throws Exception {
         long databaseSizeBeforeTest = getRepositoryCount();
         // set the field null
-        curriculum.setSemestreId(null);
+        curriculum.setSemestre(null);
 
         // Create the Curriculum, which fails.
         CurriculumDTO curriculumDTO = curriculumMapper.toDto(curriculum);
 
         restCurriculumMockMvc
-            .perform(post(ENTITY_API_URL).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(curriculumDTO)))
+            .perform(
+                post(ENTITY_API_URL)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(om.writeValueAsBytes(curriculumDTO))
+            )
             .andExpect(status().isBadRequest());
 
         assertSameRepositoryCount(databaseSizeBeforeTest);
@@ -209,9 +282,9 @@ class CurriculumResourceIT {
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(curriculum.getId().intValue())))
-            .andExpect(jsonPath("$.[*].filiereId").value(hasItem(DEFAULT_FILIERE_ID.intValue())))
-            .andExpect(jsonPath("$.[*].moduleId").value(hasItem(DEFAULT_MODULE_ID.intValue())))
-            .andExpect(jsonPath("$.[*].semestreId").value(hasItem(DEFAULT_SEMESTRE_ID.intValue())));
+            .andExpect(jsonPath("$.[*].filiere.id").value(hasItem(filiere.getId().intValue())))
+            .andExpect(jsonPath("$.[*].uniteEnseignement.id").value(hasItem(uniteEnseignement.getId().intValue())))
+            .andExpect(jsonPath("$.[*].semestre.id").value(hasItem(semestre.getId().intValue())));
     }
 
     @Test
@@ -226,9 +299,9 @@ class CurriculumResourceIT {
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.id").value(curriculum.getId().intValue()))
-            .andExpect(jsonPath("$.filiereId").value(DEFAULT_FILIERE_ID.intValue()))
-            .andExpect(jsonPath("$.moduleId").value(DEFAULT_MODULE_ID.intValue()))
-            .andExpect(jsonPath("$.semestreId").value(DEFAULT_SEMESTRE_ID.intValue()));
+            .andExpect(jsonPath("$.filiere.id").value(filiere.getId().intValue()))
+            .andExpect(jsonPath("$.uniteEnseignement.id").value(uniteEnseignement.getId().intValue()))
+            .andExpect(jsonPath("$.semestre.id").value(semestre.getId().intValue()));
     }
 
     @Test
@@ -250,7 +323,30 @@ class CurriculumResourceIT {
         Curriculum updatedCurriculum = curriculumRepository.findById(curriculum.getId()).orElseThrow();
         // Disconnect from session so that the updates on updatedCurriculum are not directly saved in db
         em.detach(updatedCurriculum);
-        updatedCurriculum.filiereId(UPDATED_FILIERE_ID).moduleId(UPDATED_MODULE_ID).semestreId(UPDATED_SEMESTRE_ID);
+
+        // Create new related entities
+        Filiere updatedFiliere = new Filiere()
+            .nom("Mathematiques")
+            .code("MATH");
+        em.persist(updatedFiliere);
+
+        UniteEnseignement updatedUniteEnseignement = new UniteEnseignement()
+            .nom("Algebre")
+            .code("ALG")
+            .filiere(updatedFiliere);
+        em.persist(updatedUniteEnseignement);
+
+        Semestre updatedSemestre = new Semestre()
+            .nom(NomSemestre.Semestre2)
+            .dateDebut(LocalDate.now().plusMonths(6))
+            .dateFin(LocalDate.now().plusMonths(12));
+        em.persist(updatedSemestre);
+
+        updatedCurriculum
+            .filiere(updatedFiliere)
+            .uniteEnseignement(updatedUniteEnseignement)
+            .semestre(updatedSemestre);
+
         CurriculumDTO curriculumDTO = curriculumMapper.toDto(updatedCurriculum);
 
         restCurriculumMockMvc
@@ -324,7 +420,9 @@ class CurriculumResourceIT {
 
         // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         restCurriculumMockMvc
-            .perform(put(ENTITY_API_URL).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(curriculumDTO)))
+            .perform(
+                put(ENTITY_API_URL).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(curriculumDTO))
+            )
             .andExpect(status().isMethodNotAllowed());
 
         // Validate the Curriculum in the database
@@ -343,7 +441,21 @@ class CurriculumResourceIT {
         Curriculum partialUpdatedCurriculum = new Curriculum();
         partialUpdatedCurriculum.setId(curriculum.getId());
 
-        partialUpdatedCurriculum.filiereId(UPDATED_FILIERE_ID).moduleId(UPDATED_MODULE_ID).semestreId(UPDATED_SEMESTRE_ID);
+        // Create new related entities
+        Filiere updatedFiliere = new Filiere()
+            .nom("Mathematiques")
+            .code("MATH");
+        em.persist(updatedFiliere);
+
+        Semestre updatedSemestre = new Semestre()
+            .nom(NomSemestre.Semestre2)
+            .dateDebut(LocalDate.now().plusMonths(6))
+            .dateFin(LocalDate.now().plusMonths(12));
+        em.persist(updatedSemestre);
+
+        partialUpdatedCurriculum
+            .filiere(updatedFiliere)
+            .semestre(updatedSemestre);
 
         restCurriculumMockMvc
             .perform(
@@ -355,7 +467,6 @@ class CurriculumResourceIT {
             .andExpect(status().isOk());
 
         // Validate the Curriculum in the database
-
         assertSameRepositoryCount(databaseSizeBeforeUpdate);
         assertCurriculumUpdatableFieldsEquals(
             createUpdateProxyForBean(partialUpdatedCurriculum, curriculum),
@@ -375,7 +486,28 @@ class CurriculumResourceIT {
         Curriculum partialUpdatedCurriculum = new Curriculum();
         partialUpdatedCurriculum.setId(curriculum.getId());
 
-        partialUpdatedCurriculum.filiereId(UPDATED_FILIERE_ID).moduleId(UPDATED_MODULE_ID).semestreId(UPDATED_SEMESTRE_ID);
+        // Create new related entities
+        Filiere updatedFiliere = new Filiere()
+            .nom("Mathematiques")
+            .code("MATH");
+        em.persist(updatedFiliere);
+
+        UniteEnseignement updatedUniteEnseignement = new UniteEnseignement()
+            .nom("Algebre")
+            .code("ALG")
+            .filiere(updatedFiliere);
+        em.persist(updatedUniteEnseignement);
+
+        Semestre updatedSemestre = new Semestre()
+            .nom(NomSemestre.Semestre2)
+            .dateDebut(LocalDate.now().plusMonths(6))
+            .dateFin(LocalDate.now().plusMonths(12));
+        em.persist(updatedSemestre);
+
+        partialUpdatedCurriculum
+            .filiere(updatedFiliere)
+            .uniteEnseignement(updatedUniteEnseignement)
+            .semestre(updatedSemestre);
 
         restCurriculumMockMvc
             .perform(
@@ -387,7 +519,6 @@ class CurriculumResourceIT {
             .andExpect(status().isOk());
 
         // Validate the Curriculum in the database
-
         assertSameRepositoryCount(databaseSizeBeforeUpdate);
         assertCurriculumUpdatableFieldsEquals(partialUpdatedCurriculum, getPersistedCurriculum(partialUpdatedCurriculum));
     }
@@ -450,7 +581,10 @@ class CurriculumResourceIT {
         // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         restCurriculumMockMvc
             .perform(
-                patch(ENTITY_API_URL).with(csrf()).contentType("application/merge-patch+json").content(om.writeValueAsBytes(curriculumDTO))
+                patch(ENTITY_API_URL)
+                    .with(csrf())
+                    .contentType("application/merge-patch+json")
+                    .content(om.writeValueAsBytes(curriculumDTO))
             )
             .andExpect(status().isMethodNotAllowed());
 

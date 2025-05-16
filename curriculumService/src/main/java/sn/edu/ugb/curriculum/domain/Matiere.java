@@ -5,11 +5,16 @@ import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+/**
+ * Entité représentant une matière/cours
+ */
 @Entity
 @Table(name = "matiere")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
+@Schema(description = "Matière ou cours enseigné dans une unité d'enseignement")
 public class Matiere implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -18,22 +23,27 @@ public class Matiere implements Serializable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
     @SequenceGenerator(name = "sequenceGenerator")
     @Column(name = "id")
+    @Schema(description = "ID unique de la matière", example = "1")
     private Long id;
 
     @NotNull
     @Column(name = "nom", nullable = false)
+    @Schema(description = "Nom de la matière", requiredMode = Schema.RequiredMode.REQUIRED, example = "Algorithmique")
     private String nom;
 
     @NotNull
     @Column(name = "heures", nullable = false)
+    @Schema(description = "Nombre d'heures de cours", requiredMode = Schema.RequiredMode.REQUIRED, example = "60")
     private Integer heures;
 
     @NotNull
     @Column(name = "credits", nullable = false)
+    @Schema(description = "Nombre de crédits ECTS", requiredMode = Schema.RequiredMode.REQUIRED, example = "5")
     private Integer credits;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "unite_enseignement_id", nullable = false)
+    @Schema(description = "Unité d'enseignement à laquelle la matière appartient")
     private UniteEnseignement uniteEnseignement;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
