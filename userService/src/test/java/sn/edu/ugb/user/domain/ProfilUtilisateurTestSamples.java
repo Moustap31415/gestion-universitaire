@@ -10,11 +10,23 @@ public class ProfilUtilisateurTestSamples {
     private static final AtomicLong longCount = new AtomicLong(random.nextInt() + (2 * Integer.MAX_VALUE));
 
     public static ProfilUtilisateur getProfilUtilisateurSample1() {
-        return new ProfilUtilisateur().id(1L).nom("nom1").prenom("prenom1").email("email1").telephone("telephone1").roleId(1L);
+        return new ProfilUtilisateur()
+            .id(1L)
+            .nom("nom1")
+            .prenom("prenom1")
+            .email("email1")
+            .telephone("telephone1")
+            .role(new Role().id(1L));
     }
 
     public static ProfilUtilisateur getProfilUtilisateurSample2() {
-        return new ProfilUtilisateur().id(2L).nom("nom2").prenom("prenom2").email("email2").telephone("telephone2").roleId(2L);
+        return new ProfilUtilisateur()
+            .id(2L)
+            .nom("nom2")
+            .prenom("prenom2")
+            .email("email2")
+            .telephone("telephone2")
+            .role(new Role().id(2L));
     }
 
     public static ProfilUtilisateur getProfilUtilisateurRandomSampleGenerator() {
@@ -24,6 +36,6 @@ public class ProfilUtilisateurTestSamples {
             .prenom(UUID.randomUUID().toString())
             .email(UUID.randomUUID().toString())
             .telephone(UUID.randomUUID().toString())
-            .roleId(longCount.incrementAndGet());
+            .role(new Role().id(longCount.incrementAndGet()));
     }
 }

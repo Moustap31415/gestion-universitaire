@@ -50,8 +50,7 @@ public class ProfilUtilisateurAsserts {
             .satisfies(a -> assertThat(a.getNom()).as("check nom").isEqualTo(expected.getNom()))
             .satisfies(a -> assertThat(a.getPrenom()).as("check prenom").isEqualTo(expected.getPrenom()))
             .satisfies(a -> assertThat(a.getEmail()).as("check email").isEqualTo(expected.getEmail()))
-            .satisfies(a -> assertThat(a.getTelephone()).as("check telephone").isEqualTo(expected.getTelephone()))
-            .satisfies(a -> assertThat(a.getRoleId()).as("check roleId").isEqualTo(expected.getRoleId()));
+            .satisfies(a -> assertThat(a.getTelephone()).as("check telephone").isEqualTo(expected.getTelephone()));
     }
 
     /**
@@ -61,6 +60,8 @@ public class ProfilUtilisateurAsserts {
      * @param actual the actual entity
      */
     public static void assertProfilUtilisateurUpdatableRelationshipsEquals(ProfilUtilisateur expected, ProfilUtilisateur actual) {
-        // empty method
+        assertThat(actual)
+            .as("Verify ProfilUtilisateur relationships")
+            .satisfies(a -> assertThat(a.getRole()).as("check role").isEqualTo(expected.getRole()));
     }
 }

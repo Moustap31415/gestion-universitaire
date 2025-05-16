@@ -10,9 +10,7 @@ import static sn.edu.ugb.user.web.rest.TestUtil.createUpdateProxyForBean;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +21,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import sn.edu.ugb.user.IntegrationTest;
 import sn.edu.ugb.user.domain.ProfilUtilisateur;
+import sn.edu.ugb.user.domain.Role;
 import sn.edu.ugb.user.repository.ProfilUtilisateurRepository;
+import sn.edu.ugb.user.repository.RoleRepository;
 import sn.edu.ugb.user.service.dto.ProfilUtilisateurDTO;
 import sn.edu.ugb.user.service.mapper.ProfilUtilisateurMapper;
 
@@ -47,20 +47,19 @@ class ProfilUtilisateurResourceIT {
     private static final String DEFAULT_TELEPHONE = "AAAAAAAAAA";
     private static final String UPDATED_TELEPHONE = "BBBBBBBBBB";
 
-    private static final Long DEFAULT_ROLE_ID = 1L;
-    private static final Long UPDATED_ROLE_ID = 2L;
-
     private static final String ENTITY_API_URL = "/api/profil-utilisateurs";
     private static final String ENTITY_API_URL_ID = ENTITY_API_URL + "/{id}";
 
-    private static Random random = new Random();
-    private static AtomicLong longCount = new AtomicLong(random.nextInt() + (2 * Integer.MAX_VALUE));
+    private static AtomicLong idCounter = new AtomicLong();
 
     @Autowired
     private ObjectMapper om;
 
     @Autowired
     private ProfilUtilisateurRepository profilUtilisateurRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
 
     @Autowired
     private ProfilUtilisateurMapper profilUtilisateurMapper;
@@ -72,91 +71,94 @@ class ProfilUtilisateurResourceIT {
     private MockMvc restProfilUtilisateurMockMvc;
 
     private ProfilUtilisateur profilUtilisateur;
-
-    private ProfilUtilisateur insertedProfilUtilisateur;
+    private Role role;
 
     /**
      * Create an entity for this test.
-     *
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity.
      */
-    public static ProfilUtilisateur createEntity() {
+    public static ProfilUtilisateur createEntity(EntityManager em) {
+        Role role = new Role()
+            .nom("ROLE_ADMIN")
+            .description("Administrateur");
+        em.persist(role);
+        em.flush();
+
         return new ProfilUtilisateur()
             .nom(DEFAULT_NOM)
             .prenom(DEFAULT_PRENOM)
             .email(DEFAULT_EMAIL)
             .telephone(DEFAULT_TELEPHONE)
-            .roleId(DEFAULT_ROLE_ID);
+            .role(role);
     }
 
     /**
      * Create an updated entity for this test.
-     *
-     * This is a static method, as tests for other entities might also need it,
-     * if they test an entity which requires the current entity.
      */
-    public static ProfilUtilisateur createUpdatedEntity() {
+    public static ProfilUtilisateur createUpdatedEntity(EntityManager em) {
+        Role role = new Role()
+            .nom("ROLE_ENSEIGNANT")
+            .description("Enseignant");
+        em.persist(role);
+        em.flush();
+
         return new ProfilUtilisateur()
             .nom(UPDATED_NOM)
             .prenom(UPDATED_PRENOM)
             .email(UPDATED_EMAIL)
             .telephone(UPDATED_TELEPHONE)
-            .roleId(UPDATED_ROLE_ID);
+            .role(role);
     }
 
     @BeforeEach
-    void initTest() {
-        profilUtilisateur = createEntity();
-    }
+    public void initTest() {
+        role = new Role()
+            .nom("ROLE_ADMIN")
+            .description("Administrateur");
+        roleRepository.saveAndFlush(role);
 
-    @AfterEach
-    void cleanup() {
-        if (insertedProfilUtilisateur != null) {
-            profilUtilisateurRepository.delete(insertedProfilUtilisateur);
-            insertedProfilUtilisateur = null;
-        }
+        profilUtilisateur = new ProfilUtilisateur()
+            .nom(DEFAULT_NOM)
+            .prenom(DEFAULT_PRENOM)
+            .email(DEFAULT_EMAIL)
+            .telephone(DEFAULT_TELEPHONE)
+            .role(role);
     }
 
     @Test
     @Transactional
     void createProfilUtilisateur() throws Exception {
-        long databaseSizeBeforeCreate = getRepositoryCount();
+        long databaseSizeBeforeCreate = profilUtilisateurRepository.count();
+
         // Create the ProfilUtilisateur
         ProfilUtilisateurDTO profilUtilisateurDTO = profilUtilisateurMapper.toDto(profilUtilisateur);
-        var returnedProfilUtilisateurDTO = om.readValue(
-            restProfilUtilisateurMockMvc
-                .perform(
-                    post(ENTITY_API_URL)
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsBytes(profilUtilisateurDTO))
-                )
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString(),
-            ProfilUtilisateurDTO.class
-        );
 
-        // Validate the ProfilUtilisateur in the database
-        assertIncrementedRepositoryCount(databaseSizeBeforeCreate);
-        var returnedProfilUtilisateur = profilUtilisateurMapper.toEntity(returnedProfilUtilisateurDTO);
-        assertProfilUtilisateurUpdatableFieldsEquals(returnedProfilUtilisateur, getPersistedProfilUtilisateur(returnedProfilUtilisateur));
+        restProfilUtilisateurMockMvc
+            .perform(
+                post(ENTITY_API_URL)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(om.writeValueAsBytes(profilUtilisateurDTO))
+            )
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").exists())
+            .andExpect(jsonPath("$.nom").value(DEFAULT_NOM))
+            .andExpect(jsonPath("$.prenom").value(DEFAULT_PRENOM))
+            .andExpect(jsonPath("$.email").value(DEFAULT_EMAIL))
+            .andExpect(jsonPath("$.telephone").value(DEFAULT_TELEPHONE))
+            .andExpect(jsonPath("$.role.id").value(role.getId().intValue()));
 
-        insertedProfilUtilisateur = returnedProfilUtilisateur;
+        // Validate the database
+        assertThat(profilUtilisateurRepository.count()).isEqualTo(databaseSizeBeforeCreate + 1);
     }
 
     @Test
     @Transactional
     void createProfilUtilisateurWithExistingId() throws Exception {
-        // Create the ProfilUtilisateur with an existing ID
         profilUtilisateur.setId(1L);
         ProfilUtilisateurDTO profilUtilisateurDTO = profilUtilisateurMapper.toDto(profilUtilisateur);
 
-        long databaseSizeBeforeCreate = getRepositoryCount();
+        long databaseSizeBeforeCreate = profilUtilisateurRepository.count();
 
-        // An entity with an existing ID cannot be created, so this API call must fail
         restProfilUtilisateurMockMvc
             .perform(
                 post(ENTITY_API_URL)
@@ -166,18 +168,15 @@ class ProfilUtilisateurResourceIT {
             )
             .andExpect(status().isBadRequest());
 
-        // Validate the ProfilUtilisateur in the database
-        assertSameRepositoryCount(databaseSizeBeforeCreate);
+        assertThat(profilUtilisateurRepository.count()).isEqualTo(databaseSizeBeforeCreate);
     }
 
     @Test
     @Transactional
     void checkNomIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
+        long databaseSizeBeforeTest = profilUtilisateurRepository.count();
         profilUtilisateur.setNom(null);
 
-        // Create the ProfilUtilisateur, which fails.
         ProfilUtilisateurDTO profilUtilisateurDTO = profilUtilisateurMapper.toDto(profilUtilisateur);
 
         restProfilUtilisateurMockMvc
@@ -189,17 +188,15 @@ class ProfilUtilisateurResourceIT {
             )
             .andExpect(status().isBadRequest());
 
-        assertSameRepositoryCount(databaseSizeBeforeTest);
+        assertThat(profilUtilisateurRepository.count()).isEqualTo(databaseSizeBeforeTest);
     }
 
     @Test
     @Transactional
     void checkPrenomIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
+        long databaseSizeBeforeTest = profilUtilisateurRepository.count();
         profilUtilisateur.setPrenom(null);
 
-        // Create the ProfilUtilisateur, which fails.
         ProfilUtilisateurDTO profilUtilisateurDTO = profilUtilisateurMapper.toDto(profilUtilisateur);
 
         restProfilUtilisateurMockMvc
@@ -211,17 +208,15 @@ class ProfilUtilisateurResourceIT {
             )
             .andExpect(status().isBadRequest());
 
-        assertSameRepositoryCount(databaseSizeBeforeTest);
+        assertThat(profilUtilisateurRepository.count()).isEqualTo(databaseSizeBeforeTest);
     }
 
     @Test
     @Transactional
     void checkEmailIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
+        long databaseSizeBeforeTest = profilUtilisateurRepository.count();
         profilUtilisateur.setEmail(null);
 
-        // Create the ProfilUtilisateur, which fails.
         ProfilUtilisateurDTO profilUtilisateurDTO = profilUtilisateurMapper.toDto(profilUtilisateur);
 
         restProfilUtilisateurMockMvc
@@ -233,17 +228,15 @@ class ProfilUtilisateurResourceIT {
             )
             .andExpect(status().isBadRequest());
 
-        assertSameRepositoryCount(databaseSizeBeforeTest);
+        assertThat(profilUtilisateurRepository.count()).isEqualTo(databaseSizeBeforeTest);
     }
 
     @Test
     @Transactional
-    void checkRoleIdIsRequired() throws Exception {
-        long databaseSizeBeforeTest = getRepositoryCount();
-        // set the field null
-        profilUtilisateur.setRoleId(null);
+    void checkRoleIsRequired() throws Exception {
+        long databaseSizeBeforeTest = profilUtilisateurRepository.count();
+        profilUtilisateur.setRole(null);
 
-        // Create the ProfilUtilisateur, which fails.
         ProfilUtilisateurDTO profilUtilisateurDTO = profilUtilisateurMapper.toDto(profilUtilisateur);
 
         restProfilUtilisateurMockMvc
@@ -255,16 +248,15 @@ class ProfilUtilisateurResourceIT {
             )
             .andExpect(status().isBadRequest());
 
-        assertSameRepositoryCount(databaseSizeBeforeTest);
+        assertThat(profilUtilisateurRepository.count()).isEqualTo(databaseSizeBeforeTest);
     }
 
     @Test
     @Transactional
     void getAllProfilUtilisateurs() throws Exception {
         // Initialize the database
-        insertedProfilUtilisateur = profilUtilisateurRepository.saveAndFlush(profilUtilisateur);
+        profilUtilisateurRepository.saveAndFlush(profilUtilisateur);
 
-        // Get all the profilUtilisateurList
         restProfilUtilisateurMockMvc
             .perform(get(ENTITY_API_URL + "?sort=id,desc"))
             .andExpect(status().isOk())
@@ -274,16 +266,15 @@ class ProfilUtilisateurResourceIT {
             .andExpect(jsonPath("$.[*].prenom").value(hasItem(DEFAULT_PRENOM)))
             .andExpect(jsonPath("$.[*].email").value(hasItem(DEFAULT_EMAIL)))
             .andExpect(jsonPath("$.[*].telephone").value(hasItem(DEFAULT_TELEPHONE)))
-            .andExpect(jsonPath("$.[*].roleId").value(hasItem(DEFAULT_ROLE_ID.intValue())));
+            .andExpect(jsonPath("$.[*].role.id").value(hasItem(role.getId().intValue())));
     }
 
     @Test
     @Transactional
     void getProfilUtilisateur() throws Exception {
         // Initialize the database
-        insertedProfilUtilisateur = profilUtilisateurRepository.saveAndFlush(profilUtilisateur);
+        profilUtilisateurRepository.saveAndFlush(profilUtilisateur);
 
-        // Get the profilUtilisateur
         restProfilUtilisateurMockMvc
             .perform(get(ENTITY_API_URL_ID, profilUtilisateur.getId()))
             .andExpect(status().isOk())
@@ -293,34 +284,41 @@ class ProfilUtilisateurResourceIT {
             .andExpect(jsonPath("$.prenom").value(DEFAULT_PRENOM))
             .andExpect(jsonPath("$.email").value(DEFAULT_EMAIL))
             .andExpect(jsonPath("$.telephone").value(DEFAULT_TELEPHONE))
-            .andExpect(jsonPath("$.roleId").value(DEFAULT_ROLE_ID.intValue()));
+            .andExpect(jsonPath("$.role.id").value(role.getId().intValue()));
     }
 
     @Test
     @Transactional
     void getNonExistingProfilUtilisateur() throws Exception {
-        // Get the profilUtilisateur
-        restProfilUtilisateurMockMvc.perform(get(ENTITY_API_URL_ID, Long.MAX_VALUE)).andExpect(status().isNotFound());
+        restProfilUtilisateurMockMvc
+            .perform(get(ENTITY_API_URL_ID, Long.MAX_VALUE))
+            .andExpect(status().isNotFound());
     }
 
     @Test
     @Transactional
     void putExistingProfilUtilisateur() throws Exception {
         // Initialize the database
-        insertedProfilUtilisateur = profilUtilisateurRepository.saveAndFlush(profilUtilisateur);
+        profilUtilisateurRepository.saveAndFlush(profilUtilisateur);
 
-        long databaseSizeBeforeUpdate = getRepositoryCount();
+        long databaseSizeBeforeUpdate = profilUtilisateurRepository.count();
 
         // Update the profilUtilisateur
-        ProfilUtilisateur updatedProfilUtilisateur = profilUtilisateurRepository.findById(profilUtilisateur.getId()).orElseThrow();
-        // Disconnect from session so that the updates on updatedProfilUtilisateur are not directly saved in db
+        ProfilUtilisateur updatedProfilUtilisateur = profilUtilisateurRepository.findById(profilUtilisateur.getId()).get();
         em.detach(updatedProfilUtilisateur);
+
+        Role updatedRole = new Role()
+            .nom("ROLE_ENSEIGNANT")
+            .description("Enseignant");
+        roleRepository.saveAndFlush(updatedRole);
+
         updatedProfilUtilisateur
             .nom(UPDATED_NOM)
             .prenom(UPDATED_PRENOM)
             .email(UPDATED_EMAIL)
             .telephone(UPDATED_TELEPHONE)
-            .roleId(UPDATED_ROLE_ID);
+            .role(updatedRole);
+
         ProfilUtilisateurDTO profilUtilisateurDTO = profilUtilisateurMapper.toDto(updatedProfilUtilisateur);
 
         restProfilUtilisateurMockMvc
@@ -333,20 +331,23 @@ class ProfilUtilisateurResourceIT {
             .andExpect(status().isOk());
 
         // Validate the ProfilUtilisateur in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertPersistedProfilUtilisateurToMatchAllProperties(updatedProfilUtilisateur);
+        assertThat(profilUtilisateurRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
+        ProfilUtilisateur persistedProfilUtilisateur = profilUtilisateurRepository.findById(profilUtilisateur.getId()).get();
+        assertThat(persistedProfilUtilisateur.getNom()).isEqualTo(UPDATED_NOM);
+        assertThat(persistedProfilUtilisateur.getPrenom()).isEqualTo(UPDATED_PRENOM);
+        assertThat(persistedProfilUtilisateur.getEmail()).isEqualTo(UPDATED_EMAIL);
+        assertThat(persistedProfilUtilisateur.getTelephone()).isEqualTo(UPDATED_TELEPHONE);
+        assertThat(persistedProfilUtilisateur.getRole().getId()).isEqualTo(updatedRole.getId());
     }
 
     @Test
     @Transactional
     void putNonExistingProfilUtilisateur() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        profilUtilisateur.setId(longCount.incrementAndGet());
+        long databaseSizeBeforeUpdate = profilUtilisateurRepository.count();
+        profilUtilisateur.setId(idCounter.incrementAndGet());
 
-        // Create the ProfilUtilisateur
         ProfilUtilisateurDTO profilUtilisateurDTO = profilUtilisateurMapper.toDto(profilUtilisateur);
 
-        // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restProfilUtilisateurMockMvc
             .perform(
                 put(ENTITY_API_URL_ID, profilUtilisateurDTO.getId())
@@ -356,62 +357,57 @@ class ProfilUtilisateurResourceIT {
             )
             .andExpect(status().isBadRequest());
 
-        // Validate the ProfilUtilisateur in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        assertThat(profilUtilisateurRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
     void putWithIdMismatchProfilUtilisateur() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        profilUtilisateur.setId(longCount.incrementAndGet());
+        long databaseSizeBeforeUpdate = profilUtilisateurRepository.count();
+        profilUtilisateur.setId(idCounter.incrementAndGet());
 
-        // Create the ProfilUtilisateur
         ProfilUtilisateurDTO profilUtilisateurDTO = profilUtilisateurMapper.toDto(profilUtilisateur);
 
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         restProfilUtilisateurMockMvc
             .perform(
-                put(ENTITY_API_URL_ID, longCount.incrementAndGet())
+                put(ENTITY_API_URL_ID, idCounter.incrementAndGet())
                     .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(om.writeValueAsBytes(profilUtilisateurDTO))
             )
             .andExpect(status().isBadRequest());
 
-        // Validate the ProfilUtilisateur in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        assertThat(profilUtilisateurRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
     void putWithMissingIdPathParamProfilUtilisateur() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        profilUtilisateur.setId(longCount.incrementAndGet());
+        long databaseSizeBeforeUpdate = profilUtilisateurRepository.count();
+        profilUtilisateur.setId(idCounter.incrementAndGet());
 
-        // Create the ProfilUtilisateur
         ProfilUtilisateurDTO profilUtilisateurDTO = profilUtilisateurMapper.toDto(profilUtilisateur);
 
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         restProfilUtilisateurMockMvc
             .perform(
-                put(ENTITY_API_URL).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(profilUtilisateurDTO))
+                put(ENTITY_API_URL)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(om.writeValueAsBytes(profilUtilisateurDTO))
             )
             .andExpect(status().isMethodNotAllowed());
 
-        // Validate the ProfilUtilisateur in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        assertThat(profilUtilisateurRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
     void partialUpdateProfilUtilisateurWithPatch() throws Exception {
         // Initialize the database
-        insertedProfilUtilisateur = profilUtilisateurRepository.saveAndFlush(profilUtilisateur);
+        profilUtilisateurRepository.saveAndFlush(profilUtilisateur);
 
-        long databaseSizeBeforeUpdate = getRepositoryCount();
+        long databaseSizeBeforeUpdate = profilUtilisateurRepository.count();
 
-        // Update the profilUtilisateur using partial update
         ProfilUtilisateur partialUpdatedProfilUtilisateur = new ProfilUtilisateur();
         partialUpdatedProfilUtilisateur.setId(profilUtilisateur.getId());
 
@@ -426,33 +422,37 @@ class ProfilUtilisateurResourceIT {
             )
             .andExpect(status().isOk());
 
-        // Validate the ProfilUtilisateur in the database
-
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertProfilUtilisateurUpdatableFieldsEquals(
-            createUpdateProxyForBean(partialUpdatedProfilUtilisateur, profilUtilisateur),
-            getPersistedProfilUtilisateur(profilUtilisateur)
-        );
+        // Validate the database
+        ProfilUtilisateur updatedProfilUtilisateur = profilUtilisateurRepository.findById(profilUtilisateur.getId()).get();
+        assertThat(updatedProfilUtilisateur.getNom()).isEqualTo(UPDATED_NOM);
+        assertThat(updatedProfilUtilisateur.getPrenom()).isEqualTo(DEFAULT_PRENOM);
+        assertThat(updatedProfilUtilisateur.getEmail()).isEqualTo(UPDATED_EMAIL);
+        assertThat(updatedProfilUtilisateur.getTelephone()).isEqualTo(UPDATED_TELEPHONE);
+        assertThat(updatedProfilUtilisateur.getRole().getId()).isEqualTo(role.getId());
     }
 
     @Test
     @Transactional
     void fullUpdateProfilUtilisateurWithPatch() throws Exception {
         // Initialize the database
-        insertedProfilUtilisateur = profilUtilisateurRepository.saveAndFlush(profilUtilisateur);
+        profilUtilisateurRepository.saveAndFlush(profilUtilisateur);
 
-        long databaseSizeBeforeUpdate = getRepositoryCount();
+        long databaseSizeBeforeUpdate = profilUtilisateurRepository.count();
 
-        // Update the profilUtilisateur using partial update
         ProfilUtilisateur partialUpdatedProfilUtilisateur = new ProfilUtilisateur();
         partialUpdatedProfilUtilisateur.setId(profilUtilisateur.getId());
+
+        Role updatedRole = new Role()
+            .nom("ROLE_ENSEIGNANT")
+            .description("Enseignant");
+        roleRepository.saveAndFlush(updatedRole);
 
         partialUpdatedProfilUtilisateur
             .nom(UPDATED_NOM)
             .prenom(UPDATED_PRENOM)
             .email(UPDATED_EMAIL)
             .telephone(UPDATED_TELEPHONE)
-            .roleId(UPDATED_ROLE_ID);
+            .role(updatedRole);
 
         restProfilUtilisateurMockMvc
             .perform(
@@ -463,25 +463,23 @@ class ProfilUtilisateurResourceIT {
             )
             .andExpect(status().isOk());
 
-        // Validate the ProfilUtilisateur in the database
-
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertProfilUtilisateurUpdatableFieldsEquals(
-            partialUpdatedProfilUtilisateur,
-            getPersistedProfilUtilisateur(partialUpdatedProfilUtilisateur)
-        );
+        // Validate the database
+        ProfilUtilisateur updatedProfilUtilisateur = profilUtilisateurRepository.findById(profilUtilisateur.getId()).get();
+        assertThat(updatedProfilUtilisateur.getNom()).isEqualTo(UPDATED_NOM);
+        assertThat(updatedProfilUtilisateur.getPrenom()).isEqualTo(UPDATED_PRENOM);
+        assertThat(updatedProfilUtilisateur.getEmail()).isEqualTo(UPDATED_EMAIL);
+        assertThat(updatedProfilUtilisateur.getTelephone()).isEqualTo(UPDATED_TELEPHONE);
+        assertThat(updatedProfilUtilisateur.getRole().getId()).isEqualTo(updatedRole.getId());
     }
 
     @Test
     @Transactional
     void patchNonExistingProfilUtilisateur() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        profilUtilisateur.setId(longCount.incrementAndGet());
+        long databaseSizeBeforeUpdate = profilUtilisateurRepository.count();
+        profilUtilisateur.setId(idCounter.incrementAndGet());
 
-        // Create the ProfilUtilisateur
         ProfilUtilisateurDTO profilUtilisateurDTO = profilUtilisateurMapper.toDto(profilUtilisateur);
 
-        // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restProfilUtilisateurMockMvc
             .perform(
                 patch(ENTITY_API_URL_ID, profilUtilisateurDTO.getId())
@@ -491,43 +489,37 @@ class ProfilUtilisateurResourceIT {
             )
             .andExpect(status().isBadRequest());
 
-        // Validate the ProfilUtilisateur in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        assertThat(profilUtilisateurRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
     void patchWithIdMismatchProfilUtilisateur() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        profilUtilisateur.setId(longCount.incrementAndGet());
+        long databaseSizeBeforeUpdate = profilUtilisateurRepository.count();
+        profilUtilisateur.setId(idCounter.incrementAndGet());
 
-        // Create the ProfilUtilisateur
         ProfilUtilisateurDTO profilUtilisateurDTO = profilUtilisateurMapper.toDto(profilUtilisateur);
 
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         restProfilUtilisateurMockMvc
             .perform(
-                patch(ENTITY_API_URL_ID, longCount.incrementAndGet())
+                patch(ENTITY_API_URL_ID, idCounter.incrementAndGet())
                     .with(csrf())
                     .contentType("application/merge-patch+json")
                     .content(om.writeValueAsBytes(profilUtilisateurDTO))
             )
             .andExpect(status().isBadRequest());
 
-        // Validate the ProfilUtilisateur in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        assertThat(profilUtilisateurRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
     void patchWithMissingIdPathParamProfilUtilisateur() throws Exception {
-        long databaseSizeBeforeUpdate = getRepositoryCount();
-        profilUtilisateur.setId(longCount.incrementAndGet());
+        long databaseSizeBeforeUpdate = profilUtilisateurRepository.count();
+        profilUtilisateur.setId(idCounter.incrementAndGet());
 
-        // Create the ProfilUtilisateur
         ProfilUtilisateurDTO profilUtilisateurDTO = profilUtilisateurMapper.toDto(profilUtilisateur);
 
-        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         restProfilUtilisateurMockMvc
             .perform(
                 patch(ENTITY_API_URL)
@@ -537,55 +529,25 @@ class ProfilUtilisateurResourceIT {
             )
             .andExpect(status().isMethodNotAllowed());
 
-        // Validate the ProfilUtilisateur in the database
-        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        assertThat(profilUtilisateurRepository.count()).isEqualTo(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
     void deleteProfilUtilisateur() throws Exception {
         // Initialize the database
-        insertedProfilUtilisateur = profilUtilisateurRepository.saveAndFlush(profilUtilisateur);
+        profilUtilisateurRepository.saveAndFlush(profilUtilisateur);
 
-        long databaseSizeBeforeDelete = getRepositoryCount();
+        long databaseSizeBeforeDelete = profilUtilisateurRepository.count();
 
-        // Delete the profilUtilisateur
         restProfilUtilisateurMockMvc
-            .perform(delete(ENTITY_API_URL_ID, profilUtilisateur.getId()).with(csrf()).accept(MediaType.APPLICATION_JSON))
+            .perform(
+                delete(ENTITY_API_URL_ID, profilUtilisateur.getId())
+                    .with(csrf())
+                    .accept(MediaType.APPLICATION_JSON)
+            )
             .andExpect(status().isNoContent());
 
-        // Validate the database contains one less item
-        assertDecrementedRepositoryCount(databaseSizeBeforeDelete);
-    }
-
-    protected long getRepositoryCount() {
-        return profilUtilisateurRepository.count();
-    }
-
-    protected void assertIncrementedRepositoryCount(long countBefore) {
-        assertThat(countBefore + 1).isEqualTo(getRepositoryCount());
-    }
-
-    protected void assertDecrementedRepositoryCount(long countBefore) {
-        assertThat(countBefore - 1).isEqualTo(getRepositoryCount());
-    }
-
-    protected void assertSameRepositoryCount(long countBefore) {
-        assertThat(countBefore).isEqualTo(getRepositoryCount());
-    }
-
-    protected ProfilUtilisateur getPersistedProfilUtilisateur(ProfilUtilisateur profilUtilisateur) {
-        return profilUtilisateurRepository.findById(profilUtilisateur.getId()).orElseThrow();
-    }
-
-    protected void assertPersistedProfilUtilisateurToMatchAllProperties(ProfilUtilisateur expectedProfilUtilisateur) {
-        assertProfilUtilisateurAllPropertiesEquals(expectedProfilUtilisateur, getPersistedProfilUtilisateur(expectedProfilUtilisateur));
-    }
-
-    protected void assertPersistedProfilUtilisateurToMatchUpdatableProperties(ProfilUtilisateur expectedProfilUtilisateur) {
-        assertProfilUtilisateurAllUpdatablePropertiesEquals(
-            expectedProfilUtilisateur,
-            getPersistedProfilUtilisateur(expectedProfilUtilisateur)
-        );
+        assertThat(profilUtilisateurRepository.count()).isEqualTo(databaseSizeBeforeDelete - 1);
     }
 }

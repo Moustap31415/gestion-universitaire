@@ -23,12 +23,17 @@ import sn.edu.ugb.user.web.rest.errors.BadRequestAlertException;
 import tech.jhipster.web.util.HeaderUtil;
 import tech.jhipster.web.util.PaginationUtil;
 import tech.jhipster.web.util.ResponseUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * REST controller for managing {@link sn.edu.ugb.user.domain.Role}.
  */
 @RestController
 @RequestMapping("/api/roles")
+@Tag(name = "Role", description = "Gestion des rôles utilisateurs")
 public class RoleResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(RoleResource.class);
@@ -55,7 +60,20 @@ public class RoleResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("")
-    public ResponseEntity<RoleDTO> createRole(@Valid @RequestBody RoleDTO roleDTO) throws URISyntaxException {
+    @Operation(
+        summary = "Créer un nouveau rôle",
+        description = "Crée un nouveau rôle dans le système",
+        responses = {
+            @ApiResponse(responseCode = "201", description = "Rôle créé avec succès"),
+            @ApiResponse(responseCode = "400", description = "Requête invalide - Le rôle existe déjà ou données incorrectes"),
+            @ApiResponse(responseCode = "401", description = "Non autorisé"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé")
+        }
+    )
+    public ResponseEntity<RoleDTO> createRole(
+        @Parameter(description = "DTO du rôle à créer", required = true)
+        @Valid @RequestBody RoleDTO roleDTO
+    ) throws URISyntaxException {
         LOG.debug("REST request to save Role : {}", roleDTO);
         if (roleDTO.getId() != null) {
             throw new BadRequestAlertException("A new role cannot already have an ID", ENTITY_NAME, "idexists");
@@ -77,8 +95,20 @@ public class RoleResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/{id}")
+    @Operation(
+        summary = "Mettre à jour un rôle",
+        description = "Met à jour complètement un rôle existant",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Rôle mis à jour avec succès"),
+            @ApiResponse(responseCode = "400", description = "ID invalide ou données incorrectes"),
+            @ApiResponse(responseCode = "404", description = "Rôle non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     public ResponseEntity<RoleDTO> updateRole(
+        @Parameter(description = "ID du rôle à mettre à jour", required = true)
         @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "DTO du rôle avec les nouvelles valeurs", required = true)
         @Valid @RequestBody RoleDTO roleDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to update Role : {}, {}", id, roleDTO);
@@ -111,8 +141,20 @@ public class RoleResource {
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
+    @Operation(
+        summary = "Mise à jour partielle d'un rôle",
+        description = "Met à jour partiellement un rôle (seuls les champs non nuls seront modifiés)",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Rôle mis à jour partiellement avec succès"),
+            @ApiResponse(responseCode = "400", description = "ID invalide ou données incorrectes"),
+            @ApiResponse(responseCode = "404", description = "Rôle non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur interne du serveur")
+        }
+    )
     public ResponseEntity<RoleDTO> partialUpdateRole(
+        @Parameter(description = "ID du rôle à mettre à jour", required = true)
         @PathVariable(value = "id", required = false) final Long id,
+        @Parameter(description = "DTO partiel du rôle avec les champs à mettre à jour", required = true)
         @NotNull @RequestBody RoleDTO roleDTO
     ) throws URISyntaxException {
         LOG.debug("REST request to partial update Role partially : {}, {}", id, roleDTO);
@@ -142,7 +184,19 @@ public class RoleResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of roles in body.
      */
     @GetMapping("")
-    public ResponseEntity<List<RoleDTO>> getAllRoles(@org.springdoc.core.annotations.ParameterObject Pageable pageable) {
+    @Operation(
+        summary = "Lister tous les rôles",
+        description = "Retourne une liste paginée de tous les rôles disponibles",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Liste des rôles récupérée avec succès"),
+            @ApiResponse(responseCode = "401", description = "Non autorisé"),
+            @ApiResponse(responseCode = "403", description = "Accès refusé")
+        }
+    )
+    public ResponseEntity<List<RoleDTO>> getAllRoles(
+        @Parameter(description = "Paramètres de pagination (page, size, sort)")
+        @org.springdoc.core.annotations.ParameterObject Pageable pageable
+    ) {
         LOG.debug("REST request to get a page of Roles");
         Page<RoleDTO> page = roleService.findAll(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
@@ -156,7 +210,18 @@ public class RoleResource {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the roleDTO, or with status {@code 404 (Not Found)}.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<RoleDTO> getRole(@PathVariable("id") Long id) {
+    @Operation(
+        summary = "Obtenir un rôle par ID",
+        description = "Retourne les détails d'un rôle spécifique",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Rôle trouvé"),
+            @ApiResponse(responseCode = "404", description = "Rôle non trouvé")
+        }
+    )
+    public ResponseEntity<RoleDTO> getRole(
+        @Parameter(description = "ID du rôle à récupérer", required = true)
+        @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to get Role : {}", id);
         Optional<RoleDTO> roleDTO = roleService.findOne(id);
         return ResponseUtil.wrapOrNotFound(roleDTO);
@@ -169,7 +234,18 @@ public class RoleResource {
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRole(@PathVariable("id") Long id) {
+    @Operation(
+        summary = "Supprimer un rôle",
+        description = "Supprime définitivement un rôle du système",
+        responses = {
+            @ApiResponse(responseCode = "204", description = "Rôle supprimé avec succès"),
+            @ApiResponse(responseCode = "404", description = "Rôle non trouvé")
+        }
+    )
+    public ResponseEntity<Void> deleteRole(
+        @Parameter(description = "ID du rôle à supprimer", required = true)
+        @PathVariable("id") Long id
+    ) {
         LOG.debug("REST request to delete Role : {}", id);
         roleService.delete(id);
         return ResponseEntity.noContent()

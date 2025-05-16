@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * A Role.
@@ -15,6 +16,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 @Table(name = "role")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
+@Schema(description = "Entité représentant un rôle utilisateur dans le système")
 public class Role implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -23,17 +25,22 @@ public class Role implements Serializable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
     @SequenceGenerator(name = "sequenceGenerator")
     @Column(name = "id")
+    @Schema(description = "ID unique du rôle", example = "1")
     private Long id;
 
     @NotNull
     @Column(name = "nom", nullable = false)
+    @Schema(description = "Nom du rôle", requiredMode = Schema.RequiredMode.REQUIRED,
+        example = "ROLE_ADMIN", allowableValues = {"ROLE_ADMIN", "ROLE_ENSEIGNANT", "ROLE_ETUDIANT"})
     private String nom;
 
     @Column(name = "description")
+    @Schema(description = "Description du rôle", example = "Administrateur du système")
     private String description;
 
     @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @Schema(description = "Liste des profils utilisateurs associés à ce rôle")
     private Set<ProfilUtilisateur> profilUtilisateurs = new HashSet<>();
 
     // jhipster-needle-entity-add-field - JHipster will add fields here

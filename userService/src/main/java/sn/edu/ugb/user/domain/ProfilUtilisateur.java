@@ -5,6 +5,8 @@ import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.SchemaProperty;
 
 /**
  * A ProfilUtilisateur.
@@ -13,6 +15,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 @Table(name = "profil_utilisateur")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
+@Schema(description = "Entité représentant le profil d'un utilisateur")
 public class ProfilUtilisateur implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -21,25 +24,31 @@ public class ProfilUtilisateur implements Serializable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
     @SequenceGenerator(name = "sequenceGenerator")
     @Column(name = "id")
+    @Schema(description = "ID unique du profil utilisateur", example = "1")
     private Long id;
 
     @NotNull
     @Column(name = "nom", nullable = false)
+    @Schema(description = "Nom de famille de l'utilisateur", requiredMode = Schema.RequiredMode.REQUIRED, example = "DIOP")
     private String nom;
 
     @NotNull
     @Column(name = "prenom", nullable = false)
+    @Schema(description = "Prénom de l'utilisateur", requiredMode = Schema.RequiredMode.REQUIRED, example = "Moussa")
     private String prenom;
 
     @NotNull
     @Column(name = "email", nullable = false, unique = true)
+    @Schema(description = "Adresse email de l'utilisateur", requiredMode = Schema.RequiredMode.REQUIRED, example = "moussa.diop@ugb.edu.sn")
     private String email;
 
     @Column(name = "telephone")
+    @Schema(description = "Numéro de téléphone de l'utilisateur", example = "+221781234567")
     private String telephone;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "role_id", nullable = false)
+    @Schema(description = "Rôle associé à l'utilisateur")
     private Role role;
 
     // jhipster-needle-entity-add-field - JHipster will add fields here
